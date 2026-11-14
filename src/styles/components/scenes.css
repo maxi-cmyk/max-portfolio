@@ -52,6 +52,7 @@ html.is-scenes .scene {
   padding: clamp(16px, 3vw, 32px) var(--scene-pad);
   overflow-y: auto;
   overscroll-behavior: contain;
+  scroll-behavior: smooth;
 }
 html.is-scenes .route-notice {
   position: absolute;

@@ -46,7 +46,7 @@ test("about returns a brief introduction", () => {
 
   assert.equal(result.kind, "about");
   assert.match(result.output, /CS student/i);
-  assert.match(result.output, /cybersecurity · mathematics · AI/i);
+  assert.match(result.output, /low-level logic, hardware and cybersecurity/);
   assert.equal(result.links, undefined);
 });
 
@@ -224,11 +224,11 @@ test("projects lists the selected hardware and maths builds", () => {
       {
         name: "Asteroids",
         meta: "ESP32 + web",
-        urls: ["https://github.com/maxi-cmyk/asteriods"],
+        urls: ["https://github.com/maxi-cmyk/asteroids"],
       },
       {
         name: "it'sPEAK",
-        meta: "2nd place · first full-stack app",
+        meta: "SMU HEAP26 · 2nd place",
         urls: [
           "https://github.com/maxi-cmyk/it-sPeak",
           "https://devpost.com/software/itspeak?ref_content=my-projects-tab&ref_feature=my_projects",
@@ -429,6 +429,7 @@ test("contact returns clickable public profile links", () => {
 
   assert.equal(result.kind, "contact");
   assert.deepEqual(result.links, [
+    { label: "email", url: "mailto:maxleong32@gmail.com" },
     { label: "github", url: "https://github.com/maxi-cmyk" },
     { label: "linkedin", url: "https://linkedin.com/in/maxleongruisheng" },
   ]);

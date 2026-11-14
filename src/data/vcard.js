@@ -1,5 +1,5 @@
 // A contact card (.vcf) from facts that are already public on the site. No
-// email or phone number yet: those are WIP until they are supplied.
+// phone number: that stays out until it is supplied.
 export function buildVCard() {
   const lines = [
     "BEGIN:VCARD",
@@ -7,10 +7,11 @@ export function buildVCard() {
     "N:Leong;Max;;;",
     "FN:Max Leong",
     "TITLE:CS student",
+    "EMAIL;TYPE=INTERNET:maxleong32@gmail.com",
     "URL:https://nfc-portfolio-card.vercel.app",
     "URL;TYPE=GitHub:https://github.com/maxi-cmyk",
     "URL;TYPE=LinkedIn:https://www.linkedin.com/in/maxleongruisheng",
-    "NOTE:Building at the intersection of cybersecurity\\, mathematics\\, engineering and AI.",
+    "NOTE:CS student interested in the intersection between low-level logic\\, hardware and cybersecurity. Occasionally explores AI-based projects.",
     "END:VCARD",
   ];
   return `${lines.join("\r\n")}\r\n`;

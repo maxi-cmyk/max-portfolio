@@ -7,6 +7,12 @@
   width: 100vw;
   height: 100vh;
   pointer-events: none;
+  transition: opacity 180ms ease-out;
+}
+/* A window is opening or closing: the canvas cannot fade with it, so it waits. */
+html.is-moving .stage-canvas {
+  opacity: 0;
+  transition: none;
 }
 .figure-frame {
   position: relative;

@@ -1,14 +1,12 @@
-// Scene transitions. Every kind is short, stepped (a few hard frames, not a
-// smooth ease), interruptible, and finishes with the new scene shown. The
-// caller passes `apply`, which swaps the scene; it runs exactly once, even if
+// Scene transitions. Every kind is short, smooth and interruptible, and animates
+// only opacity and transform, so the browser can run it off the main thread.
+// The caller passes `apply`, which swaps the scene; it runs exactly once, even if
 // the transition is cancelled first. Reduced motion just calls `apply`.
-//
-// The zoom outlines animate left/top/width/height on one empty, fixed element
-// for under 300ms; that is the only non-compositor animation here.
-
-const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 
 import { reduced } from "./reduced-motion.js";
+
+const EASE_OUT = "cubic-bezier(0.22, 1, 0.36, 1)";
+const EASE_IN = "cubic-bezier(0.4, 0, 1, 1)";
 
 export function createTransitions({
   reducedMotion = reduced,
@@ -17,7 +15,6 @@ export function createTransitions({
   let token = 0;
   let pending = null;
   const animations = new Set();
-  const timers = new Set();
 
   const ms = (n) => n * speed();
   const flush = () => {
@@ -26,151 +23,106 @@ export function createTransitions({
     pending = null;
     apply();
   };
+  // The shared 3D canvas cannot fade with a window, so it is hidden while one
+  // moves and fades back in once the window has settled (figures.css).
+  const moving = (on) =>
+    document.documentElement?.classList.toggle("is-moving", on);
   const cleanup = () => {
     animations.forEach((a) => a.cancel());
     animations.clear();
-    timers.forEach((id) => clearTimeout(id));
-    timers.clear();
-    document.querySelectorAll(".fx-layer").forEach((node) => node.remove());
+    moving(false);
   };
-  const sleep = (time) =>
-    new Promise((resolve) => {
-      const id = setTimeout(() => {
-        timers.delete(id);
-        resolve();
-      }, time);
-      timers.add(id);
-    });
   const play = (node, keyframes, options) => {
     const animation = node.animate(keyframes, options);
     animations.add(animation);
     return animation.finished.catch(() => {});
   };
 
-  // A newer navigation, or a click mid-transition, lands here: stop everything,
-  // apply any scene swap that has not happened, and leave no overlay behind.
+  // A newer navigation, or a click mid-transition, lands here: stop everything
+  // and apply any scene swap that has not happened.
   function cancel() {
     token += 1;
     cleanup();
     flush();
   }
 
-  const center = (area) => ({
-    left: area.left + area.width / 2 - 24,
-    top: area.top + area.height / 2 - 16,
-    width: 48,
-    height: 32,
-  });
-  const box = (rect) => ({
-    left: `${rect.left}px`,
-    top: `${rect.top}px`,
-    width: `${rect.width}px`,
-    height: `${rect.height}px`,
-  });
-
-  function outlines(fromRect, toRect, { fade = false } = {}) {
-    return [0, 1, 2].map((i) => {
-      const node = document.createElement("div");
-      node.className = "fx-layer fx-rect";
-      Object.assign(node.style, box(fromRect));
-      document.body.append(node);
-      return play(
-        node,
-        [
-          { ...box(fromRect), opacity: 1 },
-          { ...box(toRect), opacity: fade ? 0.2 : 1 },
-        ],
-        {
-          duration: ms(240),
-          delay: ms(i * 35),
-          easing: "steps(6, end)",
-          fill: "forwards",
-        },
-      );
-    });
-  }
-
-  async function zoomIn({ apply, scene, source, area }) {
-    const t = token;
-    const rects = outlines(source ?? center(area), area, { fade: true });
-    await sleep(ms(110));
-    if (t !== token) return;
+  const swap = (apply) => {
     pending = null;
     apply();
-    if (scene) {
-      play(scene, [{ opacity: 0 }, { opacity: 1 }], {
-        duration: ms(160),
-        easing: "steps(3, end)",
-      });
-    }
-    await Promise.all(rects);
-  }
+  };
 
-  // `source` may be a function so the target can be measured once the new
-  // scene is showing (the icon a closing window shrinks into).
-  async function zoomOut({ apply, source, area }) {
-    pending = null;
-    apply();
-    const target = typeof source === "function" ? source() : source;
-    await Promise.all(outlines(area, target ?? center(area)));
-  }
-
-  async function slide(kind, { apply, scene }) {
-    pending = null;
-    apply();
+  // A window opens: it rises a few pixels into place as it fades in. When the
+  // control that opened it is known, it grows from that point.
+  async function open({ apply, scene, source }) {
+    swap(apply);
     if (!scene) return;
-    const forward = kind === "slide-next";
+    const rect = scene.getBoundingClientRect();
+    const origin = source
+      ? `${source.left + source.width / 2 - rect.left}px ${source.top + source.height / 2 - rect.top}px`
+      : "50% 40%";
     await play(
       scene,
       [
         {
-          clipPath: forward ? "inset(0 0 0 100%)" : "inset(0 100% 0 0)",
-          transform: `translateX(${forward ? 20 : -20}px)`,
+          opacity: 0,
+          transform: "translateY(10px) scale(0.97)",
+          transformOrigin: origin,
         },
-        { clipPath: "inset(0 0 0 0)", transform: "translateX(0)" },
+        { opacity: 1, transform: "none", transformOrigin: origin },
       ],
-      { duration: ms(240), easing: "steps(6, end)" },
+      { duration: ms(260), easing: EASE_OUT },
     );
   }
 
-  // Ordered dither: platinum covers the page one Bayer level at a time, the
-  // scene swaps, then the cover is lifted in the same order.
-  async function dissolve({ apply }) {
+  // A window closes: it sinks and fades quickly, then what is behind fades in.
+  async function close({ apply, scene, from }) {
     const t = token;
-    const cell = 4;
-    const canvas = document.createElement("canvas");
-    canvas.className = "fx-layer fx-dither";
-    canvas.width = Math.ceil(window.innerWidth / cell);
-    canvas.height = Math.ceil(window.innerHeight / cell);
-    const ctx = canvas.getContext("2d");
-    const paper =
-      getComputedStyle(document.documentElement)
-        .getPropertyValue("--bg")
-        .trim() || "#d6d5cd";
-    ctx.fillStyle = paper;
-    const draw = (level) => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      for (let y = 0; y < canvas.height; y++) {
-        for (let x = 0; x < canvas.width; x++) {
-          if (BAYER[(y % 4) * 4 + (x % 4)] < level) ctx.fillRect(x, y, 1, 1);
-        }
-      }
-    };
-    document.body.append(canvas);
-    const up = [3, 6, 9, 12, 16];
-    for (const level of up) {
-      draw(level);
-      await sleep(ms(28));
+    if (from) {
+      await play(
+        from,
+        [
+          { opacity: 1, transform: "none" },
+          { opacity: 0, transform: "translateY(6px) scale(0.985)" },
+        ],
+        { duration: ms(120), easing: EASE_IN, fill: "forwards" },
+      );
       if (t !== token) return;
     }
-    pending = null;
-    apply();
-    for (const level of [...up].reverse().slice(1).concat(0)) {
-      draw(level);
-      await sleep(ms(28));
-      if (t !== token) return;
+    swap(apply);
+    // The closed window was held at its last frame; release it now it is hidden.
+    animations.forEach((a) => a.cancel());
+    animations.clear();
+    if (scene) {
+      await play(scene, [{ opacity: 0 }, { opacity: 1 }], {
+        duration: ms(180),
+        easing: EASE_OUT,
+      });
     }
-    canvas.remove();
+  }
+
+  // Sideways: the next card or step glides in from the side it came from.
+  async function slide(kind, { apply, scene }) {
+    swap(apply);
+    if (!scene) return;
+    const x = kind === "slide-next" ? 18 : -18;
+    await play(
+      scene,
+      [
+        { opacity: 0, transform: `translateX(${x}px)` },
+        { opacity: 1, transform: "none" },
+      ],
+      { duration: ms(240), easing: EASE_OUT },
+    );
+  }
+
+  // A change of topic: a plain cross-fade.
+  async function fade({ apply, scene }) {
+    swap(apply);
+    if (!scene) return;
+    await play(scene, [{ opacity: 0 }, { opacity: 1 }], {
+      duration: ms(200),
+      easing: EASE_OUT,
+    });
   }
 
   async function run(kind, options) {
@@ -181,9 +133,10 @@ export function createTransitions({
     }
     pending = options.apply;
     const t = token;
-    if (kind === "zoom-in") await zoomIn(options);
-    else if (kind === "zoom-out") await zoomOut(options);
-    else if (kind === "dissolve") await dissolve(options);
+    moving(true);
+    if (kind === "open") await open(options);
+    else if (kind === "close") await close(options);
+    else if (kind === "fade") await fade(options);
     else await slide(kind, options);
     if (t === token) {
       flush();

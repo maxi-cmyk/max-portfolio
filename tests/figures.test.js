@@ -90,11 +90,8 @@ test("the contact card has the public facts and nothing invented", () => {
   assert.match(card, /FN:Max Leong/);
   assert.match(card, /https:\/\/github\.com\/maxi-cmyk/);
   assert.match(card, /linkedin\.com\/in\/maxleongruisheng/);
-  assert.doesNotMatch(
-    card,
-    /EMAIL|TEL/,
-    "email and phone are WIP, not guessed",
-  );
+  assert.match(card, /EMAIL;TYPE=INTERNET:maxleong32@gmail\.com/);
+  assert.doesNotMatch(card, /TEL/, "the phone number is not guessed");
   assert.ok(!card.replace(/\r\n/g, "").includes("\n"));
 });
 

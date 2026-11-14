@@ -50,46 +50,9 @@ html[data-scene="credentials"] .menubar-scene::after {
 html[data-scene="contact"] .menubar-scene::after {
   content: "Contact";
 }
-.menubar-gauges {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-left: auto;
-  color: var(--muted);
-  font: var(--step--1) / 1 var(--font-chrome);
-}
-.gauge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.gauge-wifi {
-  display: none;
-}
-.meter {
-  display: inline-flex;
-  gap: 1px;
-}
-.meter i {
-  display: block;
-  width: 3px;
-  height: 9px;
-  background: color-mix(in srgb, var(--ink) 16%, transparent);
-}
-.meter i.is-lit {
-  background: var(--navy);
-}
-.meter.is-over i.is-lit {
-  background: var(--warm);
-}
-.gauge b {
-  min-width: 4.5ch;
-  color: var(--ink);
-  font-weight: 400;
-  text-align: right;
-}
 .menubar-sound {
   position: relative;
+  margin-left: auto;
   display: grid;
   width: 18px;
   height: 18px;
@@ -123,11 +86,6 @@ html[data-scene="contact"] .menubar-scene::after {
   color: var(--ink);
   outline: 2px solid var(--navy);
   outline-offset: 2px;
-}
-@media (min-width: 700px) {
-  .gauge-wifi {
-    display: inline-flex;
-  }
 }
 .menubar-clock {
   color: var(--muted);

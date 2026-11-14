@@ -84,11 +84,11 @@ export function appendCommand(command, target = {}) {
       link.href = url;
       if (download) {
         link.download = download;
-      } else {
+      } else if (!url.startsWith("mailto:")) {
         link.target = "_blank";
         link.rel = "noreferrer";
       }
-      link.textContent = `${label} → ${url.replace("https://", "")}`;
+      link.textContent = `${label} → ${url.replace(/^(https:\/\/|mailto:)/, "")}`;
       resultRow.append(link);
     });
   } else if (result.kind === "sudo") {

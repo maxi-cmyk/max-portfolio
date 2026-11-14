@@ -381,23 +381,12 @@ function render(state, { initial = false } = {}) {
   }
 }
 
-// Where the zoom starts or ends: the control that was just used, or the menu
-// item for the destination.
+// Where an opening window grows from: the control that was just used.
 function triggerRect() {
   if (lastTrigger && performance.now() - lastTrigger.at < 800) {
     return lastTrigger.rect;
   }
   return null;
-}
-
-// The desktop icon a window grows out of and shrinks back into. Read after the
-// desktop is showing, so it is passed to the transition as a function.
-function iconRect(scene) {
-  const node = document.querySelector(
-    `[data-icon="${SCENE_ELEMENTS[scene].icon}"]`,
-  );
-  const rect = node?.getBoundingClientRect();
-  return rect && rect.width > 0 ? rect : null;
 }
 
 function handleRoute({ initial = false, force = false } = {}) {
@@ -424,22 +413,14 @@ function handleRoute({ initial = false, force = false } = {}) {
     machine.settle(machine.state.seq);
     return;
   }
-  const stage = $("#landing-view").getBoundingClientRect();
-  const inset = window.innerWidth >= 900 ? 28 : 12;
-  const area = {
-    left: stage.left + inset,
-    top: stage.top + inset,
-    width: stage.width - inset * 2,
-    height: stage.height - inset * 2,
-  };
   const sceneEl =
     target.scene === "work" ? $("#work-projects") : el(target.scene);
   transitions
     .run(kind, {
       apply,
       scene: kind.startsWith("slide") ? sceneEl : el(target.scene),
-      source: kind === "zoom-in" ? triggerRect() : () => iconRect(before.scene),
-      area,
+      source: kind === "open" ? triggerRect() : null,
+      from: kind === "close" ? el(before.scene) : null,
     })
     .then(() => machine.settle(seq));
 }
@@ -607,14 +588,17 @@ export function initScenes() {
   return { go, drawer, palette };
 }
 
-// The name assembles line by line, once, when the page first appears.
+// The name rises into place, once, when the page first appears.
 export function playHeroReveal() {
   const title = $("#site-title");
   if (!title || machine?.state.scene !== "hub" || reduced()) {
     return;
   }
   title.animate(
-    [{ clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0 0)" }],
-    { duration: 600, easing: "steps(9, end)" },
+    [
+      { opacity: 0, transform: "translateY(6px)" },
+      { opacity: 1, transform: "none" },
+    ],
+    { duration: 420, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
   );
 }

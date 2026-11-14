@@ -53,66 +53,6 @@
   image-rendering: pixelated;
 }
 
-/* Band bars: LED strips for the three bands of music_LEDs. They animate an
-   example signal, not a measurement, and say so. */
-.oled-bands {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin: 6px 0 0;
-}
-.band {
-  display: grid;
-  gap: 4px;
-  color: var(--muted);
-  font: var(--step--1) / 1 var(--font-chrome);
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-}
-.band i {
-  display: block;
-  height: 7px;
-  background: repeating-linear-gradient(
-    90deg,
-    var(--c) 0 5px,
-    transparent 5px 7px
-  );
-  box-shadow: 0 0 8px color-mix(in srgb, var(--c) 45%, transparent);
-  transform-origin: left center;
-  animation: level 2.6s steps(12, end) infinite alternate;
-}
-.band-r {
-  --c: var(--led-r);
-}
-.band-g {
-  --c: var(--led-g);
-}
-.band-g i {
-  animation-duration: 1.9s;
-  animation-delay: -0.7s;
-}
-.band-b {
-  --c: var(--led-b);
-}
-.band-b i {
-  animation-duration: 3.3s;
-  animation-delay: -1.4s;
-}
-@keyframes level {
-  from {
-    transform: scaleX(0.18);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .band i {
-    animation: none;
-    transform: scaleX(0.6);
-  }
-}
-
 /* Figure screens: dark body inside the paper window, with a faint scope grid. */
 .stage-body.is-dark,
 .figure-frame.is-dark {

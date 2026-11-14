@@ -178,7 +178,7 @@ const projectsBySlug = {
       alt: WIP,
     },
     name: "it'sPEAK",
-    meta: "2nd place · first full-stack app",
+    meta: "SMU HEAP26 · 2nd place",
     tags: [
       "Python",
       "FastAPI",
@@ -392,7 +392,7 @@ const projectsBySlug = {
         },
       ],
     },
-    links: [{ label: "github", url: "https://github.com/maxi-cmyk/asteriods" }],
+    links: [{ label: "github", url: "https://github.com/maxi-cmyk/asteroids" }],
   },
   sentinel: {
     slug: "sentinel",
@@ -702,6 +702,9 @@ export const allProjects = selectProjects(
   "echo",
   "cya",
 );
+
+// The one project named on the desktop's first screen.
+export const featuredProject = allProjects.find((p) => p.slug === "itspeak");
 
 // Everything that has a case study, including Sentinel, which is not a card.
 export const caseStudyProjects = [...allProjects, projectsBySlug.sentinel];

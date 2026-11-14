@@ -1,5 +1,5 @@
 // Which transition a navigation gets. One kind per meaning, so the motion reads
-// as a language: zoom = go deeper (or back up), slide = sideways, dissolve =
+// as a language: open = go deeper, close = come back up, slide = sideways, fade =
 // change of topic. Pure: the animation itself lives in components/transitions.js.
 
 const dir = (a, b, hint) => {
@@ -22,7 +22,7 @@ export function pickTransition(
       return dir(a, b, direction);
     }
     if (to.scene === "case") {
-      if (from.slug !== to.slug) return "dissolve";
+      if (from.slug !== to.slug) return "fade";
       if ((from.step ?? 1) !== (to.step ?? 1)) {
         return dir(from.step ?? 1, to.step ?? 1, direction);
       }
@@ -30,22 +30,22 @@ export function pickTransition(
     if (to.scene === "work") {
       const same =
         (from.categories ?? []).join() === (to.categories ?? []).join();
-      return same ? "none" : "dissolve";
+      return same ? "none" : "fade";
     }
     return "none";
   }
-  if (to.scene === "hub") return "zoom-out";
-  if (from.scene === "hub") return "zoom-in";
-  if (from.scene === "work" && to.scene === "case") return "zoom-in";
-  if (from.scene === "case" && to.scene === "work") return "zoom-out";
-  return "dissolve";
+  if (to.scene === "hub") return "close";
+  if (from.scene === "hub") return "open";
+  if (from.scene === "work" && to.scene === "case") return "open";
+  if (from.scene === "case" && to.scene === "work") return "close";
+  return "fade";
 }
 
 export const TRANSITIONS = [
   "none",
-  "zoom-in",
-  "zoom-out",
+  "open",
+  "close",
   "slide-next",
   "slide-prev",
-  "dissolve",
+  "fade",
 ];

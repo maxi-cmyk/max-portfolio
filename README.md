@@ -66,11 +66,11 @@ Each work card has a media slot (`media` in `src/data/projects.js`). Until a fil
 
 ## Motion
 
-Scene changes use four short stepped transitions (zoom in, zoom out, slide, dissolve; `src/navigation/transitions.js` picks one, `src/components/transitions.js` plays it). Reduced motion applies every change at once. The Vite dev server also serves `/lab.html`, a throwaway page for trying them on real content; it is not part of the build.
+Scene changes use four short smooth transitions that animate only opacity and transform (open, close, slide, fade; `src/navigation/transitions.js` picks one, `src/components/transitions.js` plays it). The shared 3D canvas is hidden while a window moves and fades back in afterwards. Reduced motion applies every change at once.
 
 ## Windows
 
-Every window has three buttons: red closes it (one level up, like Esc), yellow minimizes it to its desktop icon (opening the icon restores the same place), green zooms it to full screen. Pure state lives in `src/navigation/windows.js`; the buttons are `src/components/lights.js`.
+Every window has three buttons: plum closes it (one level up, like Esc), platinum minimizes it to its desktop icon (opening the icon restores the same place), navy zooms it to full screen. Pure state lives in `src/navigation/windows.js`; the buttons are `src/components/lights.js`.
 
 ## 3D figures
 

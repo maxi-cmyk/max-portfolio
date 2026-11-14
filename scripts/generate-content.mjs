@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import {
   allProjects,
   caseStudyProjects,
+  featuredProject,
   focusCategories,
   categoryLabel,
   isWip,
@@ -151,7 +152,9 @@ const landing = () =>
     .join("")}</div>`;
 const cardArt = `<div class="figure-fallback">${renderCard()}</div>`;
 const contactCard = `<a class="push" href="data:text/vcard;charset=utf-8,${encodeURIComponent(buildVCard())}" download="Max_Leong.vcf">Save contact card (.vcf)</a>`;
+const featured = `<a href="#work/${featuredProject.slug}"><span class="hero-featured-tag">Start here</span> <span class="hero-featured-name">${escape(featuredProject.name)}</span> <span class="hero-featured-meta">${escape(featuredProject.meta)}</span></a>`;
 const blocks = {
+  featured,
   cardcontact: cardArt,
   contactcard: contactCard,
   mac: `<figure class="mac-art is-paper" aria-hidden="true">${renderMac()}</figure>`,

@@ -1,23 +1,7 @@
-/* Motion language: System 7 was snappy, not floaty. Hard steps and inversion,
-   never a smooth ease; never more than three things moving at once; all of it
-   is switched off by prefers-reduced-motion (see effects/motion-policy.css). */
-
-/* Transition layers (components/transitions.js). */
-.fx-layer {
-  position: fixed;
-  z-index: 70;
-  pointer-events: none;
-}
-.fx-rect {
-  box-sizing: border-box;
-  border: 1px solid var(--ink);
-}
-.fx-dither {
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  image-rendering: pixelated;
-}
+/* Motion language: windows open, close and slide with a short smooth ease on
+   opacity and transform only (components/transitions.js). Controls invert at
+   once when pressed. Never more than three things moving at once; all of it is
+   switched off by prefers-reduced-motion (see effects/motion-policy.css). */
 
 /* Push buttons, pager links and chips invert in two hard steps. */
 .project-insights-btn,

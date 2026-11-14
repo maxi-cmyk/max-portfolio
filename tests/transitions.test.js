@@ -7,22 +7,22 @@ const order = ["a", "b", "c", "d"];
 const pick = (from, to, options) =>
   pickTransition(from, to, { order, ...options });
 
-test("going deeper zooms in and coming back zooms out", () => {
-  assert.equal(pick({ scene: "hub" }, { scene: "work" }), "zoom-in");
-  assert.equal(pick({ scene: "hub" }, { scene: "skills" }), "zoom-in");
-  assert.equal(pick({ scene: "work" }, { scene: "hub" }), "zoom-out");
-  assert.equal(pick({ scene: "contact" }, { scene: "hub" }), "zoom-out");
+test("going deeper opens a window and coming back closes it", () => {
+  assert.equal(pick({ scene: "hub" }, { scene: "work" }), "open");
+  assert.equal(pick({ scene: "hub" }, { scene: "skills" }), "open");
+  assert.equal(pick({ scene: "work" }, { scene: "hub" }), "close");
+  assert.equal(pick({ scene: "contact" }, { scene: "hub" }), "close");
   assert.equal(
     pick({ scene: "work", slug: "a" }, { scene: "case", slug: "a" }),
-    "zoom-in",
+    "open",
   );
   assert.equal(
     pick({ scene: "case", slug: "a" }, { scene: "work", slug: "a" }),
-    "zoom-out",
+    "close",
   );
 });
 
-test("changing topic dissolves", () => {
+test("changing topic fades", () => {
   for (const [from, to] of [
     ["work", "skills"],
     ["skills", "credentials"],
@@ -31,7 +31,7 @@ test("changing topic dissolves", () => {
   ]) {
     assert.equal(
       pick({ scene: from }, { scene: to }),
-      "dissolve",
+      "fade",
       `${from} to ${to}`,
     );
   }
@@ -40,14 +40,14 @@ test("changing topic dissolves", () => {
       { scene: "work", categories: [] },
       { scene: "work", categories: ["applied-ai"] },
     ),
-    "dissolve",
+    "fade",
   );
   assert.equal(
     pick(
       { scene: "case", slug: "a", step: 1 },
       { scene: "case", slug: "b", step: 1 },
     ),
-    "dissolve",
+    "fade",
   );
 });
 

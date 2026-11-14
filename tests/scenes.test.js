@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { allProjects, caseStudyProjects } from "../src/data/projects.js";
+import {
+  allProjects,
+  caseStudyProjects,
+  featuredProject,
+} from "../src/data/projects.js";
 import { parseRoute, projectHash, workHash } from "../src/navigation/routes.js";
 import {
   SCENES,
@@ -130,6 +134,17 @@ test("every scene is reachable from the hub in at most three actions", () => {
     if (onCard) assert.ok(html.includes(button), `${project.name}: ${button}`);
     assert.equal(parseRoute(projectHash(project.slug)).kind, "project");
   }
+});
+
+test("the desktop's first screen names one real project and links to it", () => {
+  const hero = html.slice(
+    html.indexOf('class="about-text"'),
+    html.indexOf("generated:mac:start"),
+  );
+  const hash = `#work/${featuredProject.slug}`;
+  assert.ok(hero.includes(`href="${hash}"`), hash);
+  assert.ok(hero.includes("it&#39;sPEAK"));
+  assert.equal(sceneOf(hash).slug, featuredProject.slug);
 });
 
 test("the scene machine ignores no-ops and tracks where it came from", () => {

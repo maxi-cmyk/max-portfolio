@@ -5,45 +5,6 @@ export function formatClock(date) {
     .replace(/\s/g, " ");
 }
 
-// The frame gauge: after a window opens, time forty frames and show the average, a
-// real measurement of this device. The games budget 20 ms a frame.
-function initFrameGauge() {
-  const meter = document.querySelector(".gauge-frame .meter");
-  const label = document.querySelector("[data-frame]");
-  if (!meter || !label) return;
-  const segments = 10;
-  meter.innerHTML = "<i></i>".repeat(segments);
-  let sampling = false;
-  const show = (ms) => {
-    label.textContent = `${ms.toFixed(0)} ms`;
-    const lit = Math.min(
-      segments,
-      Math.max(1, Math.round((ms / 20) * segments)),
-    );
-    [...meter.children].forEach((seg, i) =>
-      seg.classList.toggle("is-lit", i < lit),
-    );
-    meter.classList.toggle("is-over", ms > 20);
-  };
-  const sample = () => {
-    if (sampling || document.hidden) return;
-    sampling = true;
-    let frames = 0;
-    let first = 0;
-    const tick = (now) => {
-      first ||= now;
-      if (++frames < 40) return requestAnimationFrame(tick);
-      show((now - first) / (frames - 1));
-      sampling = false;
-    };
-    requestAnimationFrame(tick);
-  };
-  window.addEventListener("portfolio:scene", () =>
-    window.setTimeout(sample, 400),
-  );
-  window.setTimeout(sample, 1200);
-}
-
 // The speaker: sound is off until it is switched on, and loads only then.
 function initSound() {
   const button = document.querySelector(".menubar-sound");
@@ -80,7 +41,6 @@ function initSound() {
 }
 
 export function initMenubar() {
-  initFrameGauge();
   initSound();
   const clock = document.querySelector(".menubar-clock");
   if (!clock) return;

@@ -14,7 +14,7 @@ export const LED_MAX = 40;
 export const LED_CHARS = /^[A-Z0-9 ,.!?:'\-]+$/;
 
 const WHOAMI =
-  "Max Leong\nCS student · builder at the physical–digital boundary";
+  "Max Leong\nCS student · low-level logic, hardware and cybersecurity";
 
 // Where each name goes. Keys are what a visitor might type.
 const SCENES = {
@@ -44,7 +44,7 @@ const HELP = `Commands:
   ls                    What is on the desktop
   projects              Open Selected work
   skills                Open Skills
-  contact               GitHub and LinkedIn
+  contact               Email, GitHub and LinkedIn
   resume                Download the PDF
   cat <project>         One project: what it is, and its links
   open <name>           Open a window, or a project (e.g. open timing-attack-lab)

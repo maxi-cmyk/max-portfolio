@@ -49,7 +49,7 @@ export function getPaletteItems() {
     {
       id: "contact",
       label: "Contact",
-      hint: "Links and resume",
+      hint: "Email, links and resume",
       hash: "#contact",
       keywords: "email github linkedin",
     },

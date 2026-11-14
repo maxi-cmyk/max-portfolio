@@ -1,7 +1,9 @@
 /* Classic Mac controls: window buttons, push buttons, pop-up menus, the
    Finder-style status strip, scroll bars, and the terminal window. */
 
-/* ---------- Window buttons: the traffic lights (red close, yellow minimize, green zoom) ---------- */
+/* ---------- Window buttons, in the site's own palette: plum closes, platinum
+   minimizes, navy zooms. The class names (red, yellow, green) are the roles'
+   old colours and are kept because scripts select on them. ---------- */
 .lights {
   position: absolute;
   top: 50%;
@@ -21,7 +23,7 @@
   background:
     radial-gradient(
       circle at 50% 26%,
-      rgba(255, 255, 255, 0.72),
+      rgba(255, 255, 255, var(--shine, 0.72)),
       rgba(255, 255, 255, 0) 58%
     ),
     var(--c);
@@ -40,13 +42,17 @@
   }
 }
 .light.red {
-  --c: #e5584c;
+  --c: #7a2e5d;
+  --glyph: #f4f3ed;
+  --shine: 0.34;
 }
 .light.yellow {
-  --c: #f4ae1d;
+  --c: #d6d5cd;
 }
 .light.green {
-  --c: #5bb41f;
+  --c: #12376b;
+  --glyph: #f4f3ed;
+  --shine: 0.34;
 }
 /* The × − + glyphs show when the pointer is anywhere on the group, as on a Mac,
    and always on a touch screen, where there is no pointer to hover with. */
@@ -55,7 +61,7 @@
   inset: 0;
   display: grid;
   place-items: center;
-  color: rgba(0, 0, 0, 0.66);
+  color: var(--glyph, rgba(0, 0, 0, 0.72));
   font: 700 13px / 1 var(--font-text);
 }
 .lights:hover .red::before,
