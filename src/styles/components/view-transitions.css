@@ -7,7 +7,6 @@
      vt-mapnode the lit box on the case map
      vt-paper   the Skills notebook page
      vt-tab     the current Skills tab
-     vt-stage   the 3D canvas, which can't move with a window, cross-fades
    html[data-vt] names the kind for the length of the transition. */
 
 html {
@@ -151,22 +150,4 @@ html[data-vt="fade"]::view-transition-old(vt-paper) {
 html[data-vt="fade"]::view-transition-new(vt-paper) {
   animation: vt-in calc(var(--vt-d) * 0.6 * var(--vt-speed, 1))
     calc(var(--vt-d) * 0.4 * var(--vt-speed, 1)) linear both;
-}
-
-/* ---------- The 3D canvas ---------- */
-/* It covers the whole screen and draws each figure into its window's box. On
-   open and close it waits for the window to land, then fades in; sideways it
-   cross-fades. */
-html.is-scenes .stage-canvas {
-  view-transition-name: vt-stage;
-}
-::view-transition-group(vt-stage) {
-  animation: none;
-}
-html:is([data-vt="open"], [data-vt="close"])::view-transition-old(vt-stage) {
-  animation: vt-out calc(var(--vt-d) * 0.3 * var(--vt-speed, 1)) linear both;
-}
-html:is([data-vt="open"], [data-vt="close"])::view-transition-new(vt-stage) {
-  animation: vt-in calc(var(--vt-d) * 0.4 * var(--vt-speed, 1))
-    calc(var(--vt-d) * 0.75 * var(--vt-speed, 1)) linear both;
 }

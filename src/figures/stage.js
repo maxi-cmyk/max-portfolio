@@ -1,6 +1,8 @@
-// One shared WebGL canvas for every figure on the page. Each figure draws only
-// into the rectangle of its host element (scissor viewports), so adding figures
-// never adds WebGL contexts. A host can change figure (the Work window swaps
+// One shared WebGL renderer for every figure on the page, drawing off screen.
+// Each figure is rendered there and copied into a plain 2D canvas inside its
+// host, so the drawing scrolls with the page natively (a fixed overlay redrawn
+// on scroll lags the scroll on phones and bounces), and adding figures never
+// adds WebGL contexts. A host can change figure (the Work window swaps
 // figures as you change project) and its controls arrive as events. This module
 // imports three.js and is loaded lazily.
 import { WebGLRenderer } from "three";
@@ -36,9 +38,6 @@ const palette = (host) => {
 
 export function createStage({ mode }) {
   const canvas = document.createElement("canvas");
-  canvas.className = "stage-canvas";
-  canvas.setAttribute("aria-hidden", "true");
-  document.body.append(canvas);
 
   const renderer = new WebGLRenderer({
     canvas,
@@ -55,19 +54,35 @@ export function createStage({ mode }) {
   let sinceReport = 0;
   let failed = false;
 
-  // The canvas is sized in pixels to the window's inner size, and every
-  // rectangle is flipped against that same height. (A 100vh canvas is taller
-  // than the window on phones whose toolbars come and go, which stretched the
-  // drawing and moved it up, out of its frame.)
-  let viewW = 0;
-  let viewH = 0;
-  const resize = () => {
-    viewW = window.innerWidth;
-    viewH = window.innerHeight;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-    renderer.setSize(viewW, viewH);
+  // The off-screen buffer only grows, to the largest figure drawn so far.
+  let ratio = 0;
+  let bufW = 0;
+  let bufH = 0;
+  const fit = (w, h) => {
+    const r = Math.min(window.devicePixelRatio || 1, 1.5);
+    if (r === ratio && w <= bufW && h <= bufH) return;
+    ratio = r;
+    bufW = Math.max(bufW, w);
+    bufH = Math.max(bufH, h);
+    renderer.setPixelRatio(ratio);
+    renderer.setSize(bufW, bufH, false);
   };
-  resize();
+
+  // Copies the figure just rendered (the bottom-left w by h of the buffer)
+  // into the host's own canvas.
+  function present(entry, w, h) {
+    const out = entry.canvas;
+    // The Work window refills its host with the next project's fallback art.
+    if (out.parentNode !== entry.host) entry.host.prepend(out);
+    const sw = Math.floor(w * ratio);
+    const sh = Math.floor(h * ratio);
+    if (out.width !== sw || out.height !== sh) {
+      out.width = sw;
+      out.height = sh;
+    }
+    entry.ctx.clearRect(0, 0, sw, sh);
+    entry.ctx.drawImage(canvas, 0, canvas.height - sh, sw, sh, 0, 0, sw, sh);
+  }
 
   // The part of a host that is on screen, not under a title bar or a status
   // strip, and not outside its scrolling window.
@@ -76,6 +91,8 @@ export function createStage({ mode }) {
     if (!host.getClientRects().length || r.width < 2 || r.height < 2)
       return null;
     let { left, top, right, bottom } = r;
+    const viewW = window.innerWidth;
+    const viewH = window.innerHeight;
     const scene = host.closest(".scene");
     if (scene) {
       const s = scene.getBoundingClientRect();
@@ -122,10 +139,6 @@ export function createStage({ mode }) {
     last = now;
     clock += dt;
     sinceReport += dt;
-    // A phone's toolbar can change the height before any resize event.
-    if (window.innerWidth !== viewW || window.innerHeight !== viewH) resize();
-    renderer.setScissorTest(false);
-    renderer.clear();
     renderer.setScissorTest(true);
     let anyVisible = false;
     let moving = false;
@@ -133,7 +146,13 @@ export function createStage({ mode }) {
       const rect = visibleRect(host);
       if (!rect) continue;
       anyVisible = true;
-      entry.figure.setSize(rect.full.width, rect.full.height);
+      // Layout size, not the on-screen box, which a window's opening
+      // animation scales.
+      const w = entry.host.clientWidth;
+      const h = entry.host.clientHeight;
+      if (w < 2 || h < 2) continue;
+      fit(w, h);
+      entry.figure.setSize(w, h);
       // A thumbnail fills its small screen, so it zooms in past the full-fit distance.
       if (entry.thumb) entry.figure.camera.position.z *= 0.58;
       if (stepOrbit(entry.orbit, dt)) moving = true;
@@ -144,19 +163,11 @@ export function createStage({ mode }) {
         orbit: entry.orbit,
         still: mode === "still",
       });
-      renderer.setViewport(
-        rect.full.left,
-        viewH - rect.full.bottom,
-        rect.full.width,
-        rect.full.height,
-      );
-      renderer.setScissor(
-        rect.x,
-        viewH - (rect.y + rect.h),
-        rect.w,
-        rect.h,
-      );
+      renderer.setViewport(0, 0, w, h);
+      renderer.setScissor(0, 0, w, h);
+      renderer.clear();
       renderer.render(entry.figure.scene, entry.figure.camera);
+      present(entry, w, h);
       if (entry.dirty || sinceReport > 0.2) {
         report(host, entry, entry.dirty);
         entry.dirty = false;
@@ -185,6 +196,7 @@ export function createStage({ mode }) {
     }
     return {
       id,
+      host,
       figure,
       pointer: { x: 0, y: 0 },
       orbit: createOrbit(),
@@ -254,6 +266,11 @@ export function createStage({ mode }) {
     if (entries.has(host) || failed) return;
     const entry = build(host);
     if (!entry) return;
+    entry.canvas = document.createElement("canvas");
+    entry.canvas.className = "figure-canvas";
+    entry.canvas.setAttribute("aria-hidden", "true");
+    entry.ctx = entry.canvas.getContext("2d");
+    host.prepend(entry.canvas);
     entries.set(host, entry);
     host.dataset.figureState = mode;
     listen(host, entry);
@@ -277,6 +294,7 @@ export function createStage({ mode }) {
       host.dataset.figureState = mode;
       report(host, old, true);
     } else {
+      old.canvas.remove();
       entries.delete(host);
       host.dataset.figureState = "idle";
     }
@@ -302,12 +320,7 @@ export function createStage({ mode }) {
   });
 
   const wake = () => schedule();
-  const onResize = () => {
-    resize();
-    wake();
-  };
-  window.addEventListener("resize", onResize);
-  window.visualViewport?.addEventListener("resize", onResize);
+  window.addEventListener("resize", wake);
   window.addEventListener("scroll", wake, true);
   window.addEventListener("portfolio:scene", wake);
   document.addEventListener("visibilitychange", wake);
@@ -315,8 +328,10 @@ export function createStage({ mode }) {
   canvas.addEventListener("webglcontextlost", (event) => {
     event.preventDefault();
     failed = true;
-    for (const host of entries.keys()) host.dataset.figureState = "fallback";
-    canvas.remove();
+    for (const [host, entry] of entries) {
+      host.dataset.figureState = "fallback";
+      entry.canvas.remove();
+    }
   });
 
   // Builds each figure once, ahead of time, and has the GPU compile its

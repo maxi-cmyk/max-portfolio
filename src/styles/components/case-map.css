@@ -2,23 +2,20 @@
    (components/case-map.js). Pencil like the rest of the window: sketched
    boxes on paper, the current step filled navy. */
 
-/* ---------- Paragraphs under a step's lead, on the note's 26px ruling ---------- */
-.case-note .case-body,
-.case-more p {
-  line-height: 26px;
-}
+/* ---------- Paragraphs share the note's ruling ---------- */
 #case .case-note {
-  /* Puts each line of text just above a rule (pencil.css sets the paper). */
+  /* The ruling starts at the first text baseline. */
   background-position: 0 9px;
-}
-/* Without a figure beside it the column is the window's width; keep lines to
-   a readable length. */
-#case .case-note {
   max-width: 46rem;
 }
+.case-note .case-body,
 .case-more p {
-  margin: 26px 0 0;
-  font: var(--step-1) / 26px var(--font-text);
+  line-height: var(--paper-line);
+}
+.case-more p {
+  margin: var(--paper-line) 0 0;
+  font-family: var(--font-text);
+  font-size: var(--step-1);
 }
 .case-more:empty {
   display: none;
