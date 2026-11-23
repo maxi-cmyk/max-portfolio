@@ -3,7 +3,7 @@
 // default credentials, so it can only be read by logging in with them.
 (() => {
   const SEALED = "BwgMDhVeBAIMHAIVOw4bC14SOx4dHAgPCDYPXQANAxQ=";
-  const FLAG_COUNT = 7;
+  const FLAG_COUNT = 6;
   const STORE = "portfolio.flags";
   const unseal = (key) => {
     const bytes = atob(SEALED);

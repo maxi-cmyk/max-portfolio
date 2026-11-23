@@ -1,11 +1,11 @@
 /* Figures: one shared canvas draws every 3D figure into its host rectangle.
    While it loads (and on weak devices) the pixel-art drawing stays. */
 .stage-canvas {
+  /* Sized in pixels by the stage to the window's inner size (stage.js). */
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
   z-index: 10;
-  width: 100vw;
-  height: 100vh;
   pointer-events: none;
   transition: opacity 180ms ease-out;
 }

@@ -29,9 +29,9 @@ const run = async (command) => {
   return lines.join("\n");
 };
 
-test("seven flags, each a distinct SHA-256", () => {
-  assert.equal(FLAGS.length, 7);
-  assert.equal(new Set(FLAGS.map((f) => f.sha256)).size, 7);
+test("six flags, each a distinct SHA-256", () => {
+  assert.equal(FLAGS.length, 6);
+  assert.equal(new Set(FLAGS.map((f) => f.sha256)).size, 6);
   for (const f of FLAGS) assert.match(f.sha256, /^[0-9a-f]{64}$/, f.id);
 });
 
@@ -106,13 +106,13 @@ test("recon leads to the open port, and nc there gives a flag", async () => {
 
 test("flags lists the hunt and submit checks by hash", async () => {
   store.clear();
-  assert.match(await run("flags"), /0 of 7 found/);
+  assert.match(await run("flags"), /0 of 6 found/);
   assert.match(await run("submit flag{not_a_real_one}"), /Not a flag/);
   assert.match(await run("submit nonsense"), /usage/);
   const security = read("public/.well-known/security.txt");
   assert.match(
     await run(`submit ${flagIn(security)}`),
-    /Flag captured: Responsible disclosure \(1 of 7\)/,
+    /Flag captured: Responsible disclosure \(1 of 6\)/,
   );
   assert.match(await run(`submit ${flagIn(security)}`), /Already captured/);
   assert.deepEqual(foundFlags(), ["disclosure"]);
@@ -129,14 +129,14 @@ test("hint escalates, one flag at a time, and stops at the last", async () => {
   assert.doesNotMatch(last, /again/);
   assert.match(await run("hint 1"), /Hint 3 of 3/);
   assert.match(await run("hint 2"), /Hint 1 of 3 for 2\. An open port/);
-  assert.match(await run("hint 9"), /usage: hint \[1-7\]/);
+  assert.match(await run("hint 9"), /usage: hint \[1-6\]/);
   assert.match(await run("hint x"), /usage/);
   // A flag already found gets no hint.
   const security = read("public/.well-known/security.txt");
   await run(`submit ${flagIn(security)}`);
   assert.match(await run("hint 5"), /already have 5\. Responsible disclosure/);
   // No hint gives a flag away.
-  for (let n = 1; n <= 7; n++) {
+  for (let n = 1; n <= 6; n++) {
     for (let i = 0; i < 3; i++) assert.ok(!flagIn(await run(`hint ${n}`)));
   }
 });
@@ -159,7 +159,7 @@ test("the console routes the hunt and help points to it", () => {
   }
   assert.equal(heroCommand("please rm -rf /").kind, "sudo");
   const help = heroCommand("help").output;
-  assert.match(help, /flags\s+7 flags are hidden/);
+  assert.match(help, /flags\s+6 flags are hidden/);
   assert.match(help, /hint \[n\]\s+A nudge/);
   assert.match(help, /submit flag\{\.\.\.\}\s+Check a flag/);
 });

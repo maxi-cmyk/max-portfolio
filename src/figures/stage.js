@@ -55,9 +55,17 @@ export function createStage({ mode }) {
   let sinceReport = 0;
   let failed = false;
 
+  // The canvas is sized in pixels to the window's inner size, and every
+  // rectangle is flipped against that same height. (A 100vh canvas is taller
+  // than the window on phones whose toolbars come and go, which stretched the
+  // drawing and moved it up, out of its frame.)
+  let viewW = 0;
+  let viewH = 0;
   const resize = () => {
+    viewW = window.innerWidth;
+    viewH = window.innerHeight;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-    renderer.setSize(window.innerWidth, window.innerHeight, false);
+    renderer.setSize(viewW, viewH);
   };
   resize();
 
@@ -83,8 +91,8 @@ export function createStage({ mode }) {
     }
     left = Math.max(left, 0);
     top = Math.max(top, 0);
-    right = Math.min(right, window.innerWidth);
-    bottom = Math.min(bottom, window.innerHeight);
+    right = Math.min(right, viewW);
+    bottom = Math.min(bottom, viewH);
     if (right - left < 2 || bottom - top < 2) return null;
     return { x: left, y: top, w: right - left, h: bottom - top, full: r };
   }
@@ -114,6 +122,8 @@ export function createStage({ mode }) {
     last = now;
     clock += dt;
     sinceReport += dt;
+    // A phone's toolbar can change the height before any resize event.
+    if (window.innerWidth !== viewW || window.innerHeight !== viewH) resize();
     renderer.setScissorTest(false);
     renderer.clear();
     renderer.setScissorTest(true);
@@ -136,13 +146,13 @@ export function createStage({ mode }) {
       });
       renderer.setViewport(
         rect.full.left,
-        window.innerHeight - rect.full.bottom,
+        viewH - rect.full.bottom,
         rect.full.width,
         rect.full.height,
       );
       renderer.setScissor(
         rect.x,
-        window.innerHeight - (rect.y + rect.h),
+        viewH - (rect.y + rect.h),
         rect.w,
         rect.h,
       );
@@ -292,10 +302,12 @@ export function createStage({ mode }) {
   });
 
   const wake = () => schedule();
-  window.addEventListener("resize", () => {
+  const onResize = () => {
     resize();
     wake();
-  });
+  };
+  window.addEventListener("resize", onResize);
+  window.visualViewport?.addEventListener("resize", onResize);
   window.addEventListener("scroll", wake, true);
   window.addEventListener("portfolio:scene", wake);
   document.addEventListener("visibilitychange", wake);

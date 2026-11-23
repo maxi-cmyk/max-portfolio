@@ -36,7 +36,7 @@ function listFlags(io) {
   });
   io.line("");
   if (found.length === FLAGS.length) {
-    io.line("All seven. Nicely done. Tell me how you found them: contact.");
+    io.line("All six. Nicely done. Tell me how you found them: contact.");
     return;
   }
   io.line("Stuck? hint 3 nudges you on flag 3. Ask again for a stronger one.");
@@ -77,11 +77,6 @@ const HINTS = {
     "It hides /admin. Open that, then view the page source (⌥⌘U on a Mac, Ctrl+U elsewhere).",
     "A comment in the source admits the default login was never changed. The username and password are the same word.",
   ],
-  card: [
-    "This one isn't on the website. It's on the physical card that brought you here.",
-    "A phone's tap opens only the card's first record, the link. A card can hold more than one.",
-    "Scan the card with an NFC reader app (NFC Tools, say) and read the second record.",
-  ],
 };
 
 // How many hints each flag has had this visit.
@@ -94,7 +89,7 @@ export function hint(arg, io) {
   if (!arg) {
     index = FLAGS.findIndex((f) => !found.includes(f.id));
     if (index === -1) {
-      io.line("All seven found. No hints needed.");
+      io.line("All six found. No hints needed.");
       return;
     }
   } else {

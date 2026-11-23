@@ -1,4 +1,4 @@
-// The easter egg hunt: seven flags hidden around the site, in the form
+// The easter egg hunt: six flags hidden around the site, in the form
 // flag{...}. Only their SHA-256 hashes are kept here, so reading the source
 // doesn't give them away; `submit flag{...}` in the console checks one. A flag
 // shown on screen is stored XOR-ed with the secret that unlocks it (the alias,
@@ -44,12 +44,6 @@ export const FLAGS = [
     name: "Keep out, crawlers",
     hint: "What does robots.txt ask crawlers to skip?",
     sha256: "c7c6700f7998dc0bce437f8d9d4541ffeac8f38f0d803d40896d8df3e411e260",
-  },
-  {
-    id: "card",
-    name: "The physical card",
-    hint: "Tap the real card with an NFC reader app, not just a browser.",
-    sha256: "38e0cc65418143b33220ff52df5bfc1511606d3d09eb7d355501459be56f0804",
   },
 ];
 

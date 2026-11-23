@@ -50,7 +50,7 @@ const HELP = `Commands:
   play                  Play Asteroids (keys or touch)
   clear                 Clear this screen
 
-  flags                 7 flags are hidden on this site. Find them.
+  flags                 6 flags are hidden on this site. Find them.
   hint [n]              A nudge on flag n. Ask again for a stronger one.
   submit flag{...}      Check a flag you found`;
 
