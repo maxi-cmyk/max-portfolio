@@ -1,0 +1,10 @@
+# Security contact for nfc-portfolio-card.vercel.app (RFC 9116).
+# Found something? Thank you. Please email first and give me a chance to fix it
+# before sharing it publicly.
+Contact: mailto:maxleong32@gmail.com
+Expires: 2027-11-23T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://nfc-portfolio-card.vercel.app/.well-known/security.txt
+
+# you read all the way to the end! here's your reward.
+# flag{read_the_fine_print}

@@ -1,11 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import {
-  allProjects,
-  caseStudyProjects,
-  featuredProject,
-} from "../src/data/projects.js";
+import { allProjects, caseStudyProjects } from "../src/data/projects.js";
 import { parseRoute, projectHash, workHash } from "../src/navigation/routes.js";
 import {
   SCENES,
@@ -39,10 +35,12 @@ test("every hash maps to one scene, including legacy and filtered links", () => 
     scene: "case",
     slug: "echo",
     step: 1,
-    read: false,
   });
   assert.equal(sceneOf("#project/echo/3").step, 3);
-  assert.equal(sceneOf("#project/echo/read").read, true);
+  // The old full write-up's links open the case study at step 1, and the
+  // address is rewritten to the case study's own.
+  assert.deepEqual(sceneOf("#project/echo/read"), sceneOf("#project/echo"));
+  assert.equal(parseRoute("#project/echo/read").hash, "#project/echo");
   assert.deepEqual(sceneOf("#nonsense"), { scene: "hub", missing: true });
   for (const hash of ["", "#home", "#work", "#skills", "#contact"]) {
     assert.ok(SCENES.includes(sceneOf(hash).scene), hash);
@@ -65,7 +63,6 @@ test("a project rides along with a filter and survives a round trip", () => {
     "#work?categories=signals-hardware,applied-ai&project=cya",
     "#project/music-leds",
     "#project/music-leds/3",
-    "#project/music-leds/read",
     "#skills",
     "#certificates",
     "#contact",
@@ -103,10 +100,6 @@ test("up goes one level and ends at the hub", () => {
     scene: "hub",
   });
   assert.deepEqual(parentScene({ scene: "skills" }), { scene: "hub" });
-  assert.deepEqual(
-    parentScene({ scene: "case", slug: "echo", step: 3, read: true }),
-    { scene: "case", slug: "echo", step: 3 },
-  );
   assert.deepEqual(parentScene({ scene: "case", slug: "echo", step: 2 }), {
     scene: "work",
     slug: "echo",
@@ -134,17 +127,6 @@ test("every scene is reachable from the hub in at most three actions", () => {
     if (onCard) assert.ok(html.includes(button), `${project.name}: ${button}`);
     assert.equal(parseRoute(projectHash(project.slug)).kind, "project");
   }
-});
-
-test("the desktop's first screen names one real project and links to it", () => {
-  const hero = html.slice(
-    html.indexOf('class="about-text"'),
-    html.indexOf("generated:mac:start"),
-  );
-  const hash = `#work/${featuredProject.slug}`;
-  assert.ok(hero.includes(`href="${hash}"`), hash);
-  assert.ok(hero.includes("it&#39;sPEAK"));
-  assert.equal(sceneOf(hash).slug, featuredProject.slug);
 });
 
 test("the scene machine ignores no-ops and tracks where it came from", () => {
@@ -277,22 +259,4 @@ test("Selected work opens on a landing with a tile for every featured project", 
     slug: null,
     categories: [],
   });
-});
-
-test("a project and a case study each offer exits to Selected work and to the desktop", () => {
-  const work = readFileSync(
-    new URL("../src/components/work.js", import.meta.url),
-    "utf8",
-  );
-  const scenes = readFileSync(
-    new URL("../src/components/scenes.js", import.meta.url),
-    "utf8",
-  );
-  for (const source of [work, scenes]) {
-    assert.match(
-      source,
-      /class="push"[^>]*href="#work"|href="#work"[^>]*>‹ Selected work/,
-    );
-    assert.match(source, /href="#home">Home</);
-  }
 });

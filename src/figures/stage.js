@@ -5,7 +5,6 @@
 // imports three.js and is loaded lazily.
 import { WebGLRenderer } from "three";
 import { createBoundaryFigure } from "./boundary.js";
-import { createCardFigure } from "./card.js";
 import { disposeFigure } from "./common.js";
 import { createOrbit, dragOrbit, stepOrbit } from "./orbit.js";
 import { createStaircaseFigure } from "./staircase.js";
@@ -13,7 +12,6 @@ import { createTorusFigure } from "./torus.js";
 import { createWindingFigure } from "./winding.js";
 
 const FIGURES = {
-  card: createCardFigure,
   winding: createWindingFigure,
   staircase: createStaircaseFigure,
   torus: createTorusFigure,
@@ -168,9 +166,16 @@ export function createStage({ mode }) {
     const id = host.dataset.figure;
     const factory = FIGURES[id];
     if (!factory) return null;
+    const figure = factory(palette(host));
+    if (host.dataset.step) {
+      figure.setStep?.(
+        Number(host.dataset.step),
+        Number(host.dataset.stepTotal),
+      );
+    }
     return {
       id,
-      figure: factory(palette(host)),
+      figure,
       pointer: { x: 0, y: 0 },
       orbit: createOrbit(),
       thumb: host.hasAttribute("data-thumb"),
@@ -233,13 +238,6 @@ export function createStage({ mode }) {
     };
     host.addEventListener("pointerup", release);
     host.addEventListener("pointercancel", release);
-    host
-      .closest(".figure-frame")
-      ?.querySelector("[data-figure-wake]")
-      ?.addEventListener("click", () => {
-        entry.figure.nudge?.(1);
-        schedule();
-      });
   }
 
   function mount(host) {
@@ -301,6 +299,7 @@ export function createStage({ mode }) {
   window.addEventListener("scroll", wake, true);
   window.addEventListener("portfolio:scene", wake);
   document.addEventListener("visibilitychange", wake);
+  document.addEventListener("toggle", wake, true);
   canvas.addEventListener("webglcontextlost", (event) => {
     event.preventDefault();
     failed = true;
@@ -308,5 +307,38 @@ export function createStage({ mode }) {
     canvas.remove();
   });
 
-  return { mount, swap, wake };
+  // Builds each figure once, ahead of time, and has the GPU compile its
+  // shaders and upload its textures, one figure per idle slot. Otherwise a
+  // figure's first frame stalls for 60 to 170 ms while that happens, in the
+  // middle of its window opening. The warmed figures are never drawn; they are
+  // kept so the compiled programs stay in three.js's cache for the real ones.
+  const warmed = new Map();
+  async function warm(ids, idle) {
+    for (const id of ids) {
+      if (failed || warmed.has(id) || !FIGURES[id]) continue;
+      await new Promise((resolve) => idle(resolve));
+      if ([...entries.values()].some((entry) => entry.id === id)) continue;
+      const host = document.querySelector(`[data-figure="${id}"]`);
+      const figure = FIGURES[id](palette(host ?? document.body));
+      figure.setSize(400, 300);
+      figure.update({
+        time: 0,
+        dt: 0.016,
+        pointer: { x: 0, y: 0 },
+        orbit: createOrbit(),
+        still: true,
+      });
+      figure.scene.traverse((node) => {
+        if (node.material?.map) renderer.initTexture(node.material.map);
+      });
+      try {
+        await renderer.compileAsync(figure.scene, figure.camera);
+      } catch {
+        renderer.compile(figure.scene, figure.camera);
+      }
+      warmed.set(id, figure);
+    }
+  }
+
+  return { mount, swap, wake, warm, figures: Object.keys(FIGURES) };
 }

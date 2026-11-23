@@ -1,88 +1,305 @@
+/* The start screen, "the card wakes the desk" (components/boot.js). The card is
+   drawn in pencil like the windows (pencil.css). It shows from the first paint
+   when the head script sets html.boot-pending; html.boot-hide keeps the
+   desktop's pieces out of sight until the card wakes them, and html.boot-wake
+   gives them their staggered entrance. */
 .boot-screen {
   position: fixed;
   inset: 0;
   z-index: 100;
-  display: grid;
-  min-height: 100vh;
+  display: none;
   place-items: center;
-  padding: 24px;
+  overflow: hidden;
   background: var(--bg);
+  background-image:
+    linear-gradient(#1e4f9e14 1px, transparent 1px),
+    linear-gradient(90deg, #1e4f9e14 1px, transparent 1px);
+  background-size: 24px 24px;
   transition:
-    opacity 200ms ease,
-    visibility 200ms ease;
+    background-color 240ms ease-out,
+    opacity 140ms ease-out;
 }
-
-body.is-booting {
+html.boot-pending .boot-screen,
+.boot-screen.is-gone {
+  display: grid;
+}
+.boot-screen.is-waking {
+  background-color: transparent;
+  background-image: none;
+}
+.boot-screen.is-gone {
+  opacity: 0;
+  pointer-events: none;
+}
+html.boot-pending body {
   overflow: hidden;
 }
 
-.boot-screen.is-complete {
-  visibility: hidden;
+/* ---------- The card ---------- */
+.boot-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(360px, 76vw);
+  aspect-ratio: 1.58;
+  /* Sits a little above centre. A margin, not a transform: a transformed
+     parent would offset the frame's fixed position as it grows. */
+  margin-bottom: 12vh;
+}
+.boot-frame {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  animation: boot-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes boot-in {
+  from {
+    opacity: 0;
+    translate: 0 14px;
+  }
+}
+.boot-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--sheet);
+  border-radius: 14px;
+  rotate: -6deg;
+  transition:
+    rotate 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-radius 380ms ease-out,
+    background-color 200ms ease-out;
+}
+.boot-card::before,
+.boot-card::after {
+  position: absolute;
+  inset: 0;
+  border: 1.8px solid var(--lead);
+  border-radius: inherit;
+  content: "";
+  filter: url(#pencil-rough);
+}
+.boot-card::after {
+  inset: 1px -1px -1px 1px;
+  opacity: 0.45;
+  filter: url(#pencil-rough2);
+}
+.boot-chip {
+  position: absolute;
+  top: 9%;
+  left: 7%;
+  width: 14%;
+  height: 16%;
+  border: 1.8px solid var(--lead);
+  border-radius: 3px;
+  background: repeating-linear-gradient(
+    90deg,
+    #7a2e5d55 0 1px,
+    transparent 1px 5px
+  );
+  filter: url(#pencil-rough);
+  transition: background-color 200ms ease-out;
+}
+.boot-coil {
+  position: absolute;
+  top: 9%;
+  right: 7%;
+  width: 44%;
+  height: 46%;
+}
+.boot-coil i {
+  position: absolute;
+  border: 1.8px solid #34332f80;
+  border-radius: 7px;
+  filter: url(#pencil-rough);
+  transition: border-color 160ms ease-out;
+}
+.boot-coil i:nth-child(1) {
+  inset: 0;
+}
+.boot-coil i:nth-child(2) {
+  inset: 13%;
+  transition-delay: 120ms;
+}
+.boot-coil i:nth-child(3) {
+  inset: 26%;
+  transition-delay: 240ms;
+}
+.boot-card b {
+  position: absolute;
+  bottom: 22%;
+  left: 7%;
+  color: var(--navy);
+  font: 400 clamp(22px, 7vw, 28px) / 1 var(--font-chrome);
+}
+.boot-card small {
+  position: absolute;
+  bottom: 9%;
+  left: 7%;
+  color: var(--muted);
+  font: 500 11px / 1 var(--font-code);
+}
+.boot-card > * {
+  transition: opacity 140ms ease-out;
+}
+
+/* ---------- The field: rings off the coil, the coil filling, the chip lit ---------- */
+.boot-ring {
+  position: absolute;
+  inset: -12%;
+  border: 1.8px solid var(--navy);
+  border-radius: 50%;
+  filter: url(#pencil-rough);
+  opacity: 0;
+  rotate: -6deg;
+}
+.boot-screen[data-frame="field"] .boot-ring {
+  animation: boot-ring 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.boot-screen[data-frame="field"] .boot-ring:nth-child(2) {
+  animation-delay: 140ms;
+}
+.boot-screen[data-frame="field"] .boot-ring:nth-child(3) {
+  animation-delay: 280ms;
+}
+@keyframes boot-ring {
+  from {
+    opacity: 0.8;
+    scale: 0.7;
+  }
+  to {
+    opacity: 0;
+    scale: 1.5;
+  }
+}
+.boot-screen[data-frame="field"] .boot-coil i,
+.boot-screen.is-waking .boot-coil i {
+  border-color: var(--navy);
+}
+.boot-screen[data-frame="field"] .boot-chip,
+.boot-screen.is-waking .boot-chip {
+  background-color: var(--warm);
+}
+
+/* ---------- Waking: the card becomes the About window's frame ---------- */
+.boot-screen.is-waking .boot-card {
+  border-radius: 2px;
+  background-color: transparent;
+  rotate: 0deg;
+}
+.boot-screen.is-waking .boot-card > * {
+  opacity: 0;
+}
+.boot-screen.is-waking .boot-card::after {
   opacity: 0;
 }
 
-.boot-terminal {
-  width: min(760px, 100%);
-  min-height: 330px;
-  padding: clamp(24px, 5vw, 52px);
-  border: 1px solid var(--line);
-  background: var(--panel);
-  box-shadow: var(--window-shadow);
-  font: clamp(13px, 1.8vw, 16px) / 1.7 var(--font-code);
-}
-
-.boot-topline {
-  display: flex;
-  justify-content: space-between;
-  gap: 18px;
-  margin-bottom: 0;
-  color: var(--muted);
-  font-size: var(--step--1);
-  letter-spacing: 0.05em;
-}
-
-.boot-topline p {
-  margin: 0;
-}
-
-.boot-topline button {
-  border: 0;
-  padding: 0;
-  background: transparent;
-  color: var(--acid);
-  cursor: pointer;
-  font: inherit;
-}
-
-.boot-topline button:hover,
-.boot-topline button:focus-visible {
-  color: var(--warm);
-  outline: none;
-}
-
-.boot-log {
-  min-height: 0;
-  margin: 0;
-  white-space: pre-wrap;
-}
-
+/* ---------- The line under the card, and Skip ---------- */
 .boot-line {
-  line-height: 1.45;
+  position: absolute;
+  right: 16px;
+  bottom: 18vh;
+  left: 16px;
+  margin: 0;
+  color: var(--ink);
+  font: 500 var(--step-0) / 1.4 var(--font-code);
+  text-align: center;
+  transition: opacity 160ms ease-out;
 }
-
-.boot-line.command {
-  color: var(--warm);
+.boot-screen.is-waking .boot-line {
+  opacity: 0;
 }
-
-.boot-line.output {
-  color: var(--muted);
-}
-
-.boot-line.success {
-  color: var(--acid);
-}
-
 .boot-cursor {
-  color: var(--acid);
+  display: inline-block;
+  width: 0.55em;
+  height: 1.05em;
+  margin-left: 3px;
+  background: var(--navy);
+  vertical-align: -0.15em;
   animation: blink 850ms steps(1) infinite;
+}
+.boot-skip {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+  font: 400 var(--step-1) / 1 var(--font-chrome);
+  isolation: isolate;
+}
+.boot-skip::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 1.7px solid var(--lead);
+  border-radius: 6px;
+  background: var(--sheet);
+  box-shadow: 3px 3px 0 var(--ink);
+  content: "";
+  filter: url(#pencil-rough);
+}
+.boot-skip:focus-visible {
+  outline: 2px solid var(--acid);
+  outline-offset: 4px;
+}
+.boot-screen.is-waking .boot-skip {
+  opacity: 0;
+}
+
+/* ---------- The desktop's pieces: hidden, then popping in one after another ---------- */
+html.boot-wake .menubar {
+  transition:
+    translate 300ms cubic-bezier(0.22, 1, 0.36, 1) 40ms,
+    opacity 200ms ease-out 40ms;
+}
+html.boot-wake #home .about {
+  transition: opacity 160ms ease-out 330ms;
+}
+html.boot-wake #home .desktop-icons .icon,
+html.boot-wake #home .field-art-card {
+  transition:
+    opacity 200ms ease-out,
+    scale 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition-delay: calc(160ms + var(--n, 0) * 45ms);
+}
+html.boot-hide .menubar {
+  opacity: 0;
+  translate: 0 -100%;
+}
+html.boot-hide #home .about {
+  opacity: 0;
+}
+html.boot-hide #home .desktop-icons .icon,
+html.boot-hide #home .field-art-card {
+  opacity: 0;
+  scale: 0.7;
+}
+#home .desktop-icons .icon:nth-child(2) {
+  --n: 1;
+}
+#home .desktop-icons .icon:nth-child(3) {
+  --n: 2;
+}
+#home .desktop-icons .icon:nth-child(4) {
+  --n: 3;
+}
+#home .desktop-icons .icon:nth-child(5) {
+  --n: 4;
+}
+#home .desktop-icons .icon:nth-child(6) {
+  --n: 5;
+}
+#home .field-art-card {
+  --n: 6;
+}
+#home .field-art-card + .field-art-card {
+  --n: 7;
+}
+#home .field-art-card + .field-art-card + .field-art-card {
+  --n: 8;
 }

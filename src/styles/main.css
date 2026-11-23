@@ -8,8 +8,6 @@
 @import "./components/certificates.css";
 @import "./responsive-motion.css";
 @import "./components/subpage.css";
-@import "./components/project-modal.css";
-@import "./components/case-studies.css";
 @import "./effects/terminal-glitch.css";
 
 @import "./components/scenes.css";
@@ -24,5 +22,10 @@
 @import "./components/arcade.css";
 @import "./components/figures.css";
 @import "./components/skills.css";
+@import "./components/panda.css";
 @import "./components/interaction.css";
+@import "./components/case-map.css";
+@import "./components/pencil.css";
+@import "./components/contact-note.css";
+@import "./components/view-transitions.css";
 @import "./effects/motion-policy.css";

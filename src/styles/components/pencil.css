@@ -1,0 +1,665 @@
+/* Pencil: the look of the windows (Skills has its own sheet, skills.css). Each
+   sketched edge is a pseudo-element drawn through the page's rough filters
+   (#pencil-rough, #pencil-rough2, defined once at the top of index.html), often
+   twice and slightly apart, like a line gone over again. Graphite, paper, navy
+   and plum; taped cards, ruled notes and hatched shading. Figure panels stay
+   level with the canvas that draws them. */
+:root {
+  --lead: #34332f;
+  --sheet: #fbfaf4;
+  --ruled: #fffef8
+    repeating-linear-gradient(transparent 0 25px, #1e4f9e22 25px 26px);
+  --hatch: repeating-linear-gradient(
+    -45deg,
+    #34332f33 0 1px,
+    transparent 1px 5px
+  );
+}
+.pencil-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+.pk-doodle {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: var(--lead);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  filter: url(#pencil-rough);
+}
+
+/* ---------- A pencil button: navy and hatched for the main action ---------- */
+.pk-btn,
+html.is-scenes .case-strip .case-strip-open,
+html.is-scenes :is(#work, #case) .statusbar .push,
+html.is-scenes #contact .contact-card .push {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ink);
+  font: 400 var(--step-1) / 1 var(--font-chrome);
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  isolation: isolate;
+  transition: translate 120ms ease-out;
+}
+.pk-btn::before,
+html.is-scenes .case-strip .case-strip-open::before,
+html.is-scenes :is(#work, #case) .statusbar .push::before,
+html.is-scenes #contact .contact-card .push::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 1.7px solid var(--ink);
+  border-radius: 6px;
+  background: var(--sheet);
+  box-shadow: 3px 3px 0 var(--ink);
+  content: "";
+  filter: url(#pencil-rough);
+}
+.pk-btn,
+html.is-scenes .case-strip .case-strip-open,
+html.is-scenes #work > .statusbar #work-next,
+html.is-scenes #case .statusbar .push[aria-label="Next step"] {
+  color: var(--panel);
+}
+.pk-btn::before,
+html.is-scenes .case-strip .case-strip-open::before,
+html.is-scenes #work > .statusbar #work-next::before,
+html.is-scenes #case .statusbar .push[aria-label="Next step"]::before {
+  background: var(--navy)
+    repeating-linear-gradient(-35deg, #ffffff22 0 1px, transparent 1px 3.5px);
+}
+.pk-btn:hover,
+.pk-btn:focus-visible,
+html.is-scenes .case-strip .case-strip-open:hover,
+html.is-scenes .case-strip .case-strip-open:focus-visible,
+html.is-scenes :is(#work, #case) .statusbar .push:hover,
+html.is-scenes :is(#work, #case) .statusbar .push:focus-visible,
+html.is-scenes #contact .contact-card .push:hover,
+html.is-scenes #contact .contact-card .push:focus-visible {
+  background: transparent;
+  translate: 0 -2px;
+}
+html.is-scenes
+  :is(#work, #case)
+  .statusbar
+  .push:not(#work-next):not([aria-label="Next step"]):hover,
+html.is-scenes #contact .contact-card .push:hover {
+  color: var(--ink);
+}
+.pk-btn:active,
+html.is-scenes .case-strip .case-strip-open:active,
+html.is-scenes :is(#work, #case) .statusbar .push:active,
+html.is-scenes #contact .contact-card .push:active {
+  translate: 2px 2px;
+}
+.pk-btn:active::before,
+html.is-scenes .case-strip .case-strip-open:active::before,
+html.is-scenes :is(#work, #case) .statusbar .push:active::before {
+  box-shadow: none;
+}
+.pk-btn:focus-visible,
+html.is-scenes .case-strip .case-strip-open:focus-visible,
+html.is-scenes :is(#work, #case) .statusbar .push:focus-visible,
+html.is-scenes #contact .contact-card .push:focus-visible {
+  outline: 2px solid var(--acid);
+  outline-offset: 4px;
+}
+
+/* ---------- Selected work: projects as taped index cards ---------- */
+html.is-scenes .work-group h3 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+html.is-scenes .work-group h3 .pk-doodle {
+  stroke: var(--warm);
+}
+html.is-scenes .work-group h3::after {
+  position: absolute;
+  bottom: -6px;
+  left: 38px;
+  width: min(220px, 70%);
+  height: 6px;
+  border-bottom: 2px solid var(--warm);
+  border-radius: 50%;
+  content: "";
+  filter: url(#pencil-rough2);
+  opacity: 0.7;
+}
+html.is-scenes .work-tiles {
+  gap: 24px;
+  padding-top: 10px;
+}
+html.is-scenes .work-tile {
+  position: relative;
+  padding: 14px 14px 16px;
+  border: 0;
+  background: var(--sheet);
+  box-shadow: none;
+  rotate: -1deg;
+  transition:
+    rotate 160ms ease-out,
+    translate 160ms ease-out;
+}
+html.is-scenes .work-tiles li:nth-child(2n) .work-tile {
+  rotate: 0.8deg;
+}
+html.is-scenes .work-tiles li:nth-child(3n) .work-tile {
+  rotate: -0.5deg;
+}
+html.is-scenes .work-tile::before,
+html.is-scenes .work-tile::after {
+  position: absolute;
+  inset: 0;
+  border: 1.7px solid var(--lead);
+  border-radius: 4px;
+  content: "";
+  filter: url(#pencil-rough);
+  pointer-events: none;
+}
+html.is-scenes .work-tile::after {
+  inset: 1px -1px -1px 1px;
+  opacity: 0.45;
+  filter: url(#pencil-rough2);
+}
+html.is-scenes .work-tile:hover,
+html.is-scenes .work-tile:focus-visible {
+  background: var(--sheet);
+  color: var(--ink);
+  rotate: 0deg;
+  translate: 0 -3px;
+}
+html.is-scenes .work-tile:focus-visible {
+  outline: 2px solid var(--acid);
+  outline-offset: 4px;
+}
+html.is-scenes .work-tile:active {
+  transform: none;
+  translate: 1px 1px;
+}
+html.is-scenes .tile-screen {
+  position: relative;
+  height: 110px;
+  overflow: visible;
+  margin: 0 0 8px;
+  border: 0;
+  background: #ecebe3 var(--hatch);
+}
+@media (min-width: 900px) {
+  html.is-scenes .tile-screen {
+    height: 120px;
+  }
+}
+html.is-scenes .tile-screen::before {
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid var(--lead);
+  border-radius: 3px;
+  content: "";
+  filter: url(#pencil-rough);
+}
+/* The strip of tape holding the card. */
+html.is-scenes .tile-screen::after {
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  width: 54px;
+  height: 17px;
+  border-right: 1px dashed #b9a97088;
+  border-left: 1px dashed #b9a97088;
+  background: #e9dcae99;
+  content: "";
+  rotate: -3deg;
+  translate: -50% 0;
+}
+html.is-scenes .tile-screen .pk-doodle {
+  width: 58px;
+  height: 58px;
+  stroke: var(--navy);
+  stroke-width: 1.6;
+}
+html.is-scenes .tile-name {
+  color: var(--navy);
+}
+html.is-scenes .work-tile:hover .tile-meta,
+html.is-scenes .work-tile:focus-visible .tile-meta {
+  color: var(--muted);
+}
+html.is-scenes .tile-badges {
+  gap: 10px;
+  margin-top: 4px;
+}
+html.is-scenes .tile-badge {
+  padding: 1px 8px;
+  border: 1.5px solid var(--warm);
+  border-radius: 4px;
+  color: var(--warm);
+  filter: url(#pencil-rough);
+  rotate: -3deg;
+}
+html.is-scenes .tile-badge:first-child:not(:last-child) {
+  border-color: var(--navy);
+  color: var(--navy);
+  rotate: 2deg;
+}
+
+/* ---------- A project: the case study as a taped, ruled note ---------- */
+html.is-scenes .case-strip {
+  border: 0;
+  background: var(--ruled);
+  box-shadow: none;
+  rotate: 0.3deg;
+}
+html.is-scenes .case-strip::before {
+  position: absolute;
+  inset: 0;
+  border: 1.6px solid var(--lead);
+  content: "";
+  filter: url(#pencil-rough);
+  pointer-events: none;
+}
+html.is-scenes .case-strip::after {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 54px;
+  height: 17px;
+  border-right: 1px dashed #b9a97088;
+  border-left: 1px dashed #b9a97088;
+  background: #e9dcae99;
+  content: "";
+  rotate: -3deg;
+  translate: -50% 0;
+}
+html.is-scenes .case-strip-n {
+  width: 22px;
+  height: 22px;
+  border: 1.6px solid var(--lead);
+  border-radius: 50%;
+  background: none;
+  filter: url(#pencil-rough);
+}
+html.is-scenes .project-facts dt {
+  color: var(--warm);
+  font-family: var(--font-chrome);
+  rotate: -2deg;
+}
+/* The datasheet becomes a spec card on graph paper. */
+.sheet {
+  position: relative;
+  border: 0;
+  background:
+    linear-gradient(#1e4f9e14 1px, transparent 1px) 0 0 / 12px 12px,
+    linear-gradient(90deg, #1e4f9e14 1px, transparent 1px) 0 0 / 12px 12px,
+    #fffef8;
+  box-shadow: none;
+}
+.sheet::before {
+  position: absolute;
+  inset: 0;
+  border: 1.6px solid var(--lead);
+  border-radius: 3px;
+  content: "";
+  filter: url(#pencil-rough);
+  pointer-events: none;
+}
+.sheet h4 {
+  color: var(--warm);
+}
+.sheet-bar span {
+  border: 1.2px solid var(--lead);
+  background: var(--sheet);
+}
+/* The figure keeps its dark screen inside a pencilled frame. */
+html.is-scenes .stage {
+  position: relative;
+  border-color: transparent;
+  box-shadow: none;
+}
+html.is-scenes .stage::after {
+  position: absolute;
+  inset: -5px;
+  z-index: 3;
+  border: 1.7px solid var(--lead);
+  border-radius: 4px;
+  content: "";
+  filter: url(#pencil-rough);
+  pointer-events: none;
+}
+
+/* ---------- Case-study sheets ---------- */
+.case-rail a {
+  isolation: isolate;
+}
+.case-rail a::before {
+  inset: 0;
+  z-index: -1;
+  border: 1.8px solid var(--lead);
+  border-radius: 50%;
+  background: var(--sheet);
+  filter: url(#pencil-rough);
+}
+.case-rail .is-done a::before,
+.case-rail a:hover::before {
+  background: var(--sheet) var(--hatch);
+}
+.case-rail a[aria-current="step"] {
+  color: var(--sheet);
+}
+.case-rail a[aria-current="step"]::before {
+  border-color: var(--navy);
+  background: var(--navy);
+  box-shadow: 3px 3px 0 var(--warm);
+}
+@media (max-width: 699px) {
+  .case-rail a {
+    width: clamp(32px, 10vw, 40px);
+    height: clamp(32px, 10vw, 40px);
+  }
+}
+.case-copy {
+  min-width: 0;
+}
+#case-title {
+  width: fit-content;
+}
+.case-note {
+  position: relative;
+  margin: 16px 0 8px;
+  padding: 15px 17px;
+  background: var(--ruled);
+}
+.case-note::before {
+  position: absolute;
+  inset: 0;
+  border: 1.6px solid var(--lead);
+  content: "";
+  filter: url(#pencil-rough);
+  pointer-events: none;
+}
+.case-note .case-code {
+  max-width: none;
+  margin: 12px 0 0;
+}
+.case-actions {
+  margin: 3px 0 8px;
+}
+#case .case-pager {
+  position: static;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+#case .case-pager p {
+  font: 400 var(--step--1) / 1.4 var(--font-chrome);
+}
+html.is-scenes #case > .stage:not(.is-empty) {
+  display: flex;
+  margin: 26px 4px 12px;
+}
+html.is-scenes #case > .stage.is-empty {
+  display: none;
+}
+@media (min-width: 1000px) {
+  html.is-scenes #case:not([hidden]) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 38%);
+    grid-template-rows: auto auto;
+    gap: 0 42px;
+    align-content: start;
+  }
+  html.is-scenes #case:not(:has(> .stage:not(.is-empty))):not([hidden]) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  html.is-scenes #case > .stage:not(.is-empty) {
+    grid-area: 2 / 2;
+    margin-top: 0;
+  }
+}
+.case-figure-sketch {
+  display: none;
+  margin: 10px 14px;
+  padding: 16px;
+  border-radius: 4px;
+  background: var(--hatch);
+  text-align: center;
+}
+.has-step-sketch:not(:has(details[open])) .case-figure-sketch {
+  display: block;
+}
+.case-figure-sketch svg {
+  display: block;
+  width: 100%;
+  margin: 0 auto;
+  fill: none;
+  stroke: var(--lead);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.3;
+  filter: url(#pencil-rough);
+}
+.case-figure-sketch p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font: var(--step--1) / 1.4 var(--font-chrome);
+}
+.case-figure-controls > summary {
+  display: none;
+}
+.case-figure-controls:not([open]) > .stage-body {
+  display: none;
+}
+.has-step-sketch:not(.no-3d):not(:has([data-figure-state="fallback"]))
+  .case-figure-controls
+  > summary {
+  display: list-item;
+  min-height: 36px;
+  margin: 0 14px;
+  padding-block: 8px;
+  color: var(--navy);
+  cursor: pointer;
+}
+/* ---------- Contact: email first, then the other ways in ---------- */
+html.is-scenes #contact .contact-main {
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 2vw, 16px);
+  max-width: none;
+  margin: 8px 0 22px;
+}
+#contact .contact-main .pk-btn {
+  flex: none;
+  white-space: nowrap;
+}
+.contact-address {
+  color: var(--muted);
+  font: 500 clamp(12px, 3.8vw, var(--step-0)) / 1.4 var(--font-code);
+  overflow-wrap: anywhere;
+}
+.contact-links {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 22px;
+  padding: 0;
+  list-style: none;
+}
+.contact-links li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+.contact-links a {
+  color: var(--acid);
+  font: 700 var(--step-1) / 1.3 var(--font-text);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.contact-links span {
+  color: var(--muted);
+  font-size: var(--step-0);
+}
+
+/* ---------- Credentials: pinned to the board ---------- */
+html.is-scenes .certificate-list {
+  border-top: 0;
+}
+html.is-scenes .certificate-entry {
+  padding: 28px 0 22px;
+  border-bottom: 0;
+}
+html.is-scenes .certificate-preview {
+  position: relative;
+  padding: 12px;
+  overflow: visible;
+  border: 0;
+  background: var(--sheet);
+  box-shadow: none;
+  rotate: -1.5deg;
+}
+html.is-scenes .certificate-preview::before {
+  position: absolute;
+  inset: 0;
+  border: 1.7px solid var(--lead);
+  border-radius: 3px;
+  content: "";
+  filter: url(#pencil-rough);
+  pointer-events: none;
+}
+/* The pin. */
+html.is-scenes .certificate-preview::after {
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: var(--warm);
+  box-shadow: 2px 3px 0 #0004;
+  content: "";
+  filter: url(#pencil-rough);
+}
+html.is-scenes .certificate-preview:hover,
+html.is-scenes .certificate-preview:focus-visible {
+  box-shadow: none;
+}
+.certificate-date {
+  display: inline-block;
+  margin: 0 0 10px;
+  padding: 1px 8px;
+  border: 1.5px solid var(--navy);
+  border-radius: 4px;
+  color: var(--navy);
+  font: 400 var(--step-0) / 1.5 var(--font-chrome);
+  filter: url(#pencil-rough);
+  rotate: -3deg;
+}
+.certificate-issuer {
+  color: var(--muted);
+}
+.certificate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+}
+.certificate-actions a:not(.pk-btn) {
+  color: var(--acid);
+  font: 700 var(--step-1) / 1.3 var(--font-text);
+}
+.certificate-next {
+  position: relative;
+  display: grid;
+  height: 96px;
+  margin: 8px 0 0;
+  place-items: center;
+  color: var(--muted);
+  font: 400 var(--step-1) var(--font-chrome);
+}
+.certificate-next::before {
+  position: absolute;
+  inset: 0;
+  border: 1.6px dashed var(--lead);
+  border-radius: 6px;
+  content: "";
+  filter: url(#pencil-rough);
+}
+html:not(.is-scenes) .certificate-next {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pk-btn,
+  html.is-scenes .work-tile {
+    transition: none;
+  }
+}
+/* The shared link style would otherwise dress the button as a link. */
+.certificate-actions a.pk-btn,
+.certificate-actions a.pk-btn:hover,
+.certificate-actions a.pk-btn:focus-visible {
+  border: 0;
+  background: transparent;
+  color: var(--panel);
+  font: 400 var(--step-1) / 1 var(--font-chrome);
+  text-decoration: none;
+}
+
+/* Pencil-framed figures on paper. */
+html.is-scenes :is(#work, #case) > .stage {
+  background: var(--sheet);
+}
+:is(#work, #case) > .stage .stage-bar {
+  padding: 12px 14px 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: var(--step--1) / 1.35 var(--font-chrome);
+  letter-spacing: normal;
+  text-transform: none;
+}
+:is(#work, #case) > .stage .stage-bar span {
+  padding: 0;
+  background: none;
+}
+html.is-scenes :is(#work, #case) > .stage .figure-host {
+  height: clamp(175px, 25vw, 265px);
+}
+:is(#work, #case) .stage .figure-host::after {
+  content: none;
+}
+:is(#work, #case) .stage .figure-readout {
+  min-height: 0;
+  color: var(--muted);
+  font-family: var(--font-text);
+}
+#work .stage .pk-doodle {
+  width: 72px;
+  height: 72px;
+  stroke: var(--navy);
+}
+#work .stage.no-3d:not(.is-empty) .figure-frame {
+  display: block;
+}
+#work
+  .stage:has(.figure-host[data-figure-state="fallback"])
+  :is(.figure-controls, .figure-readout) {
+  display: none;
+}

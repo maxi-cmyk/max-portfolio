@@ -1,14 +1,13 @@
 // The About window as a live console. It reuses the terminal's runner, history and
-// completion, with the hero's own commands (terminal/hero-script.js). Phones never
-// need a keyboard: the quick commands are buttons that type themselves.
+// completion, with the hero's own commands (terminal/hero-script.js).
 import { CommandHistory } from "../terminal/history.js";
 import { getTerminalTabAction } from "../terminal/input.js";
+import { getHeroCandidates, heroCommand } from "../terminal/hero-script.js";
 import {
-  HERO_CHIPS,
-  getHeroCandidates,
-  heroCommand,
-} from "../terminal/hero-script.js";
-import { appendCommand, appendSuggestions } from "./terminal/runner.js";
+  appendCommand,
+  appendSuggestions,
+  revealLatest,
+} from "./terminal/runner.js";
 import { createLights } from "./lights.js";
 import { screenPath } from "../data/mac-screen.js";
 import { reduced } from "./reduced-motion.js";
@@ -21,9 +20,8 @@ export function initHeroTerminal() {
   const output = document.getElementById("hero-output");
   const form = document.getElementById("hero-form");
   const input = document.getElementById("hero-input");
-  const chips = document.getElementById("hero-chips");
   const bar = about?.querySelector(".titlebar");
-  if (!about || !output || !form || !input || !chips || !bar) {
+  if (!about || !output || !form || !input || !bar) {
     return { open() {}, close() {}, toggle() {}, isOpen: () => false };
   }
 
@@ -54,6 +52,19 @@ export function initHeroTerminal() {
   });
   bar.querySelector(".lights")?.replaceWith(lights.el);
   const [red, yellow, green] = lights.el.querySelectorAll(".light");
+  const viewport = window.visualViewport;
+  const fitConsole = () => {
+    const bottom =
+      phone() && viewport.scale === 1
+        ? Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)
+        : 0;
+    about.style.setProperty("--console-viewport-bottom", `${bottom}px`);
+  };
+  const setDesktopInert = (inert) => {
+    about.parentElement
+      .querySelectorAll(".desktop-icons, .desk-artwork")
+      .forEach((element) => (element.inert = inert));
+  };
   const syncLights = () => {
     const on = about.classList.contains("is-terminal");
     for (const light of [red, yellow]) {
@@ -73,32 +84,31 @@ export function initHeroTerminal() {
     if (!output.childElementCount) {
       const welcome = document.createElement("p");
       welcome.className = "welcome";
-      welcome.textContent = "Type help, or tap a command below.";
+      welcome.textContent = "Type help to see available commands.";
       output.append(welcome);
     }
     about.classList.add("is-terminal");
-    title.textContent = "max@portfolio — console";
+    setDesktopInert(true);
+    if (viewport) {
+      fitConsole();
+      viewport.addEventListener("resize", fitConsole);
+      viewport.addEventListener("scroll", fitConsole);
+    }
+    title.textContent = "max@portfolio:~/console";
     syncLights();
-    output.scrollTop = output.scrollHeight;
+    revealLatest(output);
   }
   function exit() {
     about.classList.remove("is-terminal");
+    setDesktopInert(false);
+    viewport?.removeEventListener("resize", fitConsole);
+    viewport?.removeEventListener("scroll", fitConsole);
+    about.style.removeProperty("--console-viewport-bottom");
     title.textContent = idleTitle;
     syncLights();
     input.blur();
   }
   syncLights();
-
-  chips.replaceChildren(
-    ...HERO_CHIPS.map((word) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "push hero-chip";
-      button.textContent = word;
-      button.addEventListener("click", () => typeAndRun(word));
-      return button;
-    }),
-  );
 
   function run(command) {
     if (!command.trim()) return;
@@ -107,6 +117,15 @@ export function initHeroTerminal() {
     output.hidden = false;
     appendCommand(command, target);
     const result = heroCommand(command);
+    // The panda reacts to what the console did (components/panda.js).
+    window.dispatchEvent(
+      new CustomEvent("portfolio:console", {
+        detail: {
+          kind: result.kind,
+          unknown: /command not found/.test(result.output ?? ""),
+        },
+      }),
+    );
     if (result.kind === "game")
       window.dispatchEvent(new Event("portfolio:play"));
     if (result.kind === "led") {
@@ -118,26 +137,13 @@ export function initHeroTerminal() {
     if (result.kind === "clear") {
       output.hidden = !about.classList.contains("is-terminal");
     } else if (
-      phone() &&
+      // A phone's first command opens the full console; so does the panda egg,
+      // whose drawing needs the room.
+      (phone() || result.kind === "panda") &&
       result.kind !== "nav" &&
       !about.classList.contains("is-terminal")
     )
       enter();
-  }
-
-  // A tapped command types itself into the line, then runs.
-  async function typeAndRun(command) {
-    input.value = "";
-    if (!reduced()) {
-      for (const char of command) {
-        input.value += char;
-        echo(input.value);
-        await wait(28);
-      }
-      await wait(120);
-    }
-    input.value = "";
-    run(command);
   }
 
   input.addEventListener("input", () => echo(input.value));

@@ -19,7 +19,8 @@ export const datasheets = {
       {
         k: "Bins",
         v: "50 Hz apart, Nyquist 3.2 kHz",
-        check: "bins are 50 Hz apart and Nyquist is 3.2 kHz",
+        // The case study states both in its sampling table.
+        check: '["Bin spacing","50 Hz"],["Nyquist limit","3.2 kHz"]',
       },
       { k: "GPIO 19", v: `red · ${band("red")}`, led: "r", readme: true },
       { k: "GPIO 18", v: `green · ${band("green")}`, led: "g", readme: true },
@@ -92,15 +93,39 @@ export const datasheets = {
   },
   itspeak: {
     rows: [
-      { k: "Result", v: "2nd place, first full-stack app", check: "2nd place" },
+      {
+        k: "Voice",
+        v: "pace, pitch variation, pauses, filler words",
+        check: "pacing, pitch variation, pauses, and filler words",
+      },
+      {
+        k: "Video",
+        v: "eye contact, expression, posture, gesture, movement",
+        check: "eye-contact, expression, posture, gesture, movement",
+      },
+      {
+        k: "Jobs",
+        v: "FastAPI queues, a Celery worker analyses, Redis carries state",
+        check: "Redis carries job state",
+      },
     ],
   },
   echo: {
     rows: [
       {
-        k: "Event",
-        v: "iNTUition 2026, Best Freshmen Award",
-        check: "Best Freshmen Award",
+        k: "Review",
+        v: "a caregiver approves each memory before it is shown",
+        check: "until a caregiver approves it",
+      },
+      {
+        k: "Context",
+        v: "local LLaVA drafts summary, people, place and date",
+        check: "summary, people, place, and date context",
+      },
+      {
+        k: "Cooldown",
+        v: "a Like hides an item for 24 hours",
+        check: "A Like hides an item for 24 hours",
       },
     ],
   },
@@ -124,5 +149,5 @@ export function renderDatasheet(name, slug) {
         .map((p) => `<span>${esc(p)}</span>`)
         .join("")}<small>${esc(sheet.bar.label)}</small></div>`
     : "";
-  return `<section class="sheet is-dark" aria-label="${esc(name)} datasheet"><h4>${esc(name)} · datasheet</h4><dl>${rows}</dl>${bar}</section>`;
+  return `<section class="sheet" aria-label="${esc(name)} datasheet"><h4>${esc(name)} · datasheet</h4><dl>${rows}</dl>${bar}</section>`;
 }

@@ -11,10 +11,8 @@ import {
   qualifies,
   stepGame,
 } from "../figures/arcade-core.js";
-import { reduced } from "./reduced-motion.js";
 
 const STORE = "portfolio.arcade";
-const IDLE_MS = 25000;
 
 function loadScores() {
   try {
@@ -301,24 +299,3 @@ function open(mode) {
 export const startGame = () => (ui ? ui.start() : open("play"));
 
 // After a quiet spell on the desktop (pointer devices only), the screensaver starts.
-export function initScreensaver() {
-  if (!matchMedia("(pointer: fine)").matches || reduced()) return;
-  let timer = 0;
-  const arm = () => {
-    window.clearTimeout(timer);
-    timer = window.setTimeout(() => {
-      if (
-        !ui &&
-        document.documentElement.dataset.scene === "hub" &&
-        !document.hidden
-      ) {
-        if (!document.querySelector("dialog[open]")) open("attract");
-      }
-      arm();
-    }, IDLE_MS);
-  };
-  for (const type of ["pointermove", "pointerdown", "keydown", "wheel"]) {
-    addEventListener(type, arm, { passive: true });
-  }
-  arm();
-}

@@ -7,8 +7,6 @@ import { desktopIcons } from "../data/icons.js";
 import { getAutocompleteCandidates } from "./autocomplete.js";
 import { resolveCommand } from "./commands/index.js";
 
-export const HERO_CHIPS = ["about", "skills", "projects", "contact", "resume"];
-
 export const LED_MAX = 40;
 // What the 5x7 matrix font can draw (led-matrix.js).
 export const LED_CHARS = /^[A-Z0-9 ,.!?:'\-]+$/;
@@ -50,13 +48,26 @@ const HELP = `Commands:
   open <name>           Open a window, or a project (e.g. open timing-attack-lab)
   led <text>            Write on the LED matrix lying on the desk
   play                  Play Asteroids (keys or touch)
-  clear                 Clear this screen`;
+  clear                 Clear this screen
+
+  flags                 7 flags are hidden on this site. Find them.
+  hint [n]              A nudge on flag n. Ask again for a stronger one.
+  submit flag{...}      Check a flag you found`;
+
+// The easter egg hunt (terminal/hunt.js, loaded when one of these is typed).
+const HUNT =
+  /^(flags|submit( .*)?|hints?( .*)?|alias|id|uname( -a)?|nmap( .*)?|nc( .*)?|telnet( .*)?|login( .*)?|cat \/etc\/(passwd|shadow))$/;
 
 export function heroCommand(raw) {
   const command = raw.trim().replace(/\s+/g, " ");
   const lower = command.toLowerCase();
 
   if (lower === "help" || lower === "?") return { kind: "help", output: HELP };
+  if (HUNT.test(lower)) return { kind: "hunt", output: "", command };
+  // What `alias` lists.
+  if (lower.startsWith("please "))
+    return resolveCommand(`sudo ${command.slice(7)}`);
+  if (lower === "ll" || lower === "ls -l") return heroCommand("ls");
   if (lower === "whoami") return { kind: "about", output: WHOAMI };
   if (lower === "play" || lower === "asteroids") {
     return {
@@ -150,6 +161,9 @@ export function getHeroCandidates() {
       "certs",
       "led ",
       "play",
+      "flags",
+      "submit flag{",
+      "hint ",
       ...allProjects.flatMap((p) => [`cat ${p.slug}`, `open ${p.slug}`]),
       ...Object.keys(SCENES).map((name) => `open ${name}`),
     ]),

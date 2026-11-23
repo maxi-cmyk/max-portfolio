@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { BLIPS, soundFor } from "../src/components/sound.js";
-import { getBootSteps } from "../src/terminal/boot.js";
+import { getBootFrames, getBootTiming } from "../src/terminal/boot.js";
 
 test("every blip is short and in a comfortable range", () => {
   for (const [name, notes] of Object.entries(BLIPS)) {
@@ -29,15 +29,29 @@ test("sound is off by default and the speaker is a real, named button", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   assert.match(
     html,
-    /class="menubar-sound" aria-pressed="false" aria-label="Sound effects"/,
+    /class="menubar-sound"\s+aria-pressed="false"\s+aria-label="Sound effects"/,
   );
 });
 
-test("the tap moment is a short bring-up log that says what the hardware is", () => {
-  const steps = getBootSteps();
-  assert.ok(steps.length >= 4 && steps.length <= 7);
-  const text = steps.map((s) => s.text).join("\n");
-  assert.match(text, /13\.56 MHz/);
-  assert.match(text, /128 samples @ 6\.4 kHz/);
-  assert.equal(steps.at(-1).kind, "success");
+test("the start screen is short, in order, and says what the card does", () => {
+  const frames = getBootFrames();
+  const at = frames.map((f) => f.at);
+  assert.deepEqual(
+    at,
+    [...at].sort((a, b) => a - b),
+    "frames run in order",
+  );
+  assert.equal(at[0], 0);
+  assert.ok(at.at(-1) <= 1600, `ends at ${at.at(-1)} ms`);
+  assert.deepEqual(
+    frames.map((f) => f.id),
+    ["tap", "field", "wake", "done"],
+  );
+  assert.match(frames.map((f) => f.line).join("\n"), /13\.56 MHz/);
+  const { grow, fallback } = getBootTiming();
+  assert.ok(
+    frames[2].at + grow <= frames[3].at,
+    "the frame lands before the end",
+  );
+  assert.ok(fallback <= 3000);
 });

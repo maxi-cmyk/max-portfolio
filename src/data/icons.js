@@ -3,6 +3,7 @@
 // are classes (c-k ink, c-p paper, c-w platinum, c-g shade, c-n navy,
 // c-m plum, c-s screen) so the theme stays in CSS. Pure: no DOM.
 import { screenPath } from "./mac-screen.js";
+import { toSvg } from "./pixel-svg.js";
 
 const GLYPHS = {
   h: ["x.x", "x.x", "xxx", "x.x", "x.x"],
@@ -161,49 +162,6 @@ function drawMac(g) {
   fill(g, 12, 53, 40, 1, "k");
 }
 
-function toSvg(g, className, extra = "") {
-  const h = g.length;
-  const w = g[0].length;
-  const paths = {};
-  g.forEach((row, y) => {
-    let x = 0;
-    while (x < w) {
-      const k = row[x];
-      if (!k) {
-        x++;
-        continue;
-      }
-      let n = 1;
-      while (row[x + n] === k) n++;
-      (paths[k] ??= []).push(`M${x} ${y}h${n}v1h-${n}z`);
-      x += n;
-    }
-  });
-  const body = Object.entries(paths)
-    .map(([k, d]) => `<path class="c-${k}" d="${d.join("")}"/>`)
-    .join("");
-  return `<svg class="${className}" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges" aria-hidden="true" focusable="false">${body}${extra}</svg>`;
-}
-
-function drawCard(g) {
-  fill(g, 2, 3, 44, 26, "p");
-  frame(g, 2, 3, 44, 26, "k");
-  for (const [x, y] of [
-    [2, 3],
-    [45, 3],
-    [2, 28],
-    [45, 28],
-  ])
-    put(g, x, y, null);
-  frame(g, 5, 6, 38, 20, "n");
-  frame(g, 7, 8, 34, 16, "n");
-  frame(g, 9, 10, 30, 12, "n");
-  fill(g, 11, 12, 6, 6, "m");
-  frame(g, 10, 11, 8, 8, "k");
-  fill(g, 24, 17, 12, 2, "k");
-  fill(g, 24, 20, 8, 1, "g");
-}
-
 export const ICON_NAMES = Object.keys(DRAW);
 
 export function renderIcon(name) {
@@ -241,10 +199,3 @@ export const desktopIcons = [
     download: "Max_Leong_Resume.pdf",
   },
 ];
-
-// The pixel-art card shown while (or instead of) the 3D one.
-export function renderCard() {
-  const g = grid(48, 32);
-  drawCard(g);
-  return toSvg(g, "px-icon px-card");
-}

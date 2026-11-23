@@ -111,15 +111,63 @@ html.is-scenes .project-card-desc {
 .case {
   touch-action: pan-y;
 }
-.case-crumb {
-  margin: 0;
+/* Numbered links sit over the rail's pencil line. */
+.case-rail ol {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  width: min(100%, calc(var(--steps) * 66px), 338px);
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
 }
-.case-kicker {
-  margin: 8px 0;
-  color: var(--warm);
-  font: 500 var(--step--1) / 1 var(--font-mono);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+.case-rail ol::before {
+  position: absolute;
+  inset: calc(50% - 1px) 18px auto;
+  height: 2px;
+  background: var(--lead);
+  content: "";
+  filter: url(#pencil-rough2);
+}
+.case-rail a {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  color: var(--ink);
+  font: 400 var(--step-0) / 1 var(--font-chrome);
+  text-decoration: none;
+}
+.case-rail a::before,
+.case-rail a::after {
+  position: absolute;
+  content: "";
+}
+.case-rail a::after {
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 5;
+  width: max-content;
+  max-width: 20ch;
+  padding: 2px 8px;
+  border: var(--hair);
+  background: var(--panel);
+  box-shadow: 2px 2px 0 var(--ink);
+  color: var(--ink);
+  content: attr(data-title);
+  font: var(--step--1) / 1.4 var(--font-text);
+  opacity: 0;
+  pointer-events: none;
+}
+.case-rail a:hover::after,
+.case-rail a:focus-visible::after {
+  opacity: 1;
+}
+@media (hover: none), (max-width: 699px) {
+  .case-rail a::after {
+    display: none;
+  }
 }
 #case-title {
   margin: 0 0 8px;
@@ -131,16 +179,14 @@ html.is-scenes .project-card-desc {
   line-height: 1.15;
   letter-spacing: 0;
 }
-.case-project {
-  margin: 0 0 20px;
-  color: var(--muted);
-  font: var(--step--1) / 1.5 var(--font-mono);
+.case-kicker {
+  margin: 0 0 6px;
+  color: var(--warm);
+  font: 400 var(--step-0) / 1.35 var(--font-chrome);
 }
 .case-body {
-  max-width: 58ch;
-  margin: 0 0 16px;
-  font-size: var(--step-1);
-  line-height: 1.55;
+  margin: 0;
+  font: var(--step-1) / 1.55 var(--font-text);
 }
 .case-code {
   max-width: 58ch;
@@ -271,7 +317,7 @@ html.is-scenes #contact h2 {
   padding: 8px 14px;
   border-top: var(--hair);
   color: var(--muted);
-  font: var(--step--1) var(--font-mono);
+  font: var(--step--1) var(--font-text);
 }
 
 /* ---------- Stage beside the scene (wide screens) ---------- */
@@ -333,8 +379,7 @@ html.is-scenes #contact h2 {
     grid-column: 1;
   }
   html.is-scenes #work.is-landing > .section-heading.section-heading,
-  html.is-scenes #work.is-landing > .work-landing.work-landing,
-  html.is-scenes #work.is-landing > .exit-row.exit-row {
+  html.is-scenes #work.is-landing > .work-landing.work-landing {
     grid-column: 1 / -1;
   }
 }

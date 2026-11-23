@@ -1,0 +1,172 @@
+/* Screen changes (components/transitions.js). The browser keeps a picture of
+   the old screen up while the new one comes in, so nothing goes blank. What is
+   the same on both screens stays put; named parts travel:
+     vt-window  a page opens out of the control that opened it, and closes back
+     vt-slide   the project card or case note slides by direction
+     vt-step    the filled step on the case rail
+     vt-mapnode the lit box on the case map
+     vt-paper   the Skills notebook page
+     vt-tab     the current Skills tab
+     vt-stage   the 3D canvas, which can't move with a window, cross-fades
+   html[data-vt] names the kind for the length of the transition. */
+
+html {
+  --vt-d: 240ms;
+  --vt-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+html[data-vt="open"] {
+  --vt-d: 300ms;
+}
+html[data-vt="close"] {
+  --vt-d: 240ms;
+}
+html[data-vt="fade"] {
+  --vt-d: 200ms;
+}
+
+/* Clicks go to the live page underneath, so a second click or key press during
+   the motion starts the next move straight away. */
+::view-transition {
+  pointer-events: none;
+}
+::view-transition-group(*),
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation-duration: calc(var(--vt-d) * var(--vt-speed, 1));
+  animation-timing-function: var(--vt-ease);
+}
+
+@keyframes vt-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes vt-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/* ---------- Open and close ---------- */
+/* The group grows from the clicked control's box to the page's box. The page's
+   picture fills the group from the top, cropped, so it never stretches. */
+::view-transition-group(vt-window) {
+  overflow: clip;
+}
+::view-transition-old(vt-window),
+::view-transition-new(vt-window) {
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 0;
+}
+/* The control keeps its own size inside the growing box; only the page is
+   fitted to it. */
+html[data-vt="open"]::view-transition-old(vt-window),
+html[data-vt="close"]::view-transition-new(vt-window) {
+  width: auto;
+  height: auto;
+  margin-inline: auto;
+}
+/* Opening: the control hands over quickly, so the page is solid as it grows. */
+html[data-vt="open"]::view-transition-old(vt-window) {
+  animation: vt-out calc(var(--vt-d) * 0.3 * var(--vt-speed, 1)) linear both;
+}
+html[data-vt="open"]::view-transition-new(vt-window) {
+  animation: vt-in calc(var(--vt-d) * 0.3 * var(--vt-speed, 1)) linear both;
+}
+/* Closing: the page stays solid while it shrinks and only fades at the end. */
+html[data-vt="close"]::view-transition-old(vt-window) {
+  animation: vt-out calc(var(--vt-d) * 0.35 * var(--vt-speed, 1))
+    calc(var(--vt-d) * 0.65 * var(--vt-speed, 1)) linear both;
+}
+html[data-vt="close"]::view-transition-new(vt-window) {
+  animation: vt-in calc(var(--vt-d) * 0.35 * var(--vt-speed, 1))
+    calc(var(--vt-d) * 0.65 * var(--vt-speed, 1)) linear both;
+}
+html[data-vt="close"]::view-transition-group(vt-window) {
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---------- Sideways ---------- */
+@keyframes vt-slide-out-next {
+  to {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+}
+@keyframes vt-slide-in-next {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
+@keyframes vt-slide-out-prev {
+  to {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
+@keyframes vt-slide-in-prev {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+}
+::view-transition-old(vt-slide),
+::view-transition-new(vt-slide) {
+  height: auto;
+}
+/* The old card leaves quicker than the new one arrives, so the two overlap
+   only briefly. */
+html[data-vt^="slide"]::view-transition-old(vt-slide) {
+  animation-duration: calc(var(--vt-d) * 0.6 * var(--vt-speed, 1));
+}
+html[data-vt="slide-next"]::view-transition-old(vt-slide) {
+  animation-name: vt-slide-out-next;
+}
+html[data-vt="slide-next"]::view-transition-new(vt-slide) {
+  animation-name: vt-slide-in-next;
+}
+html[data-vt="slide-prev"]::view-transition-old(vt-slide) {
+  animation-name: vt-slide-out-prev;
+}
+html[data-vt="slide-prev"]::view-transition-new(vt-slide) {
+  animation-name: vt-slide-in-prev;
+}
+/* The card's height can change; it slides rather than stretching. */
+::view-transition-group(vt-slide) {
+  animation-name: none;
+}
+
+/* ---------- Skills: one notebook page to the next ---------- */
+/* The paper stays; the old table goes before the new one comes in, so two
+   dense tables never sit on top of each other. */
+::view-transition-old(vt-paper),
+::view-transition-new(vt-paper) {
+  height: auto;
+}
+html[data-vt="fade"]::view-transition-old(vt-paper) {
+  animation: vt-out calc(var(--vt-d) * 0.45 * var(--vt-speed, 1)) linear both;
+}
+html[data-vt="fade"]::view-transition-new(vt-paper) {
+  animation: vt-in calc(var(--vt-d) * 0.6 * var(--vt-speed, 1))
+    calc(var(--vt-d) * 0.4 * var(--vt-speed, 1)) linear both;
+}
+
+/* ---------- The 3D canvas ---------- */
+/* It covers the whole screen and draws each figure into its window's box. On
+   open and close it waits for the window to land, then fades in; sideways it
+   cross-fades. */
+html.is-scenes .stage-canvas {
+  view-transition-name: vt-stage;
+}
+::view-transition-group(vt-stage) {
+  animation: none;
+}
+html:is([data-vt="open"], [data-vt="close"])::view-transition-old(vt-stage) {
+  animation: vt-out calc(var(--vt-d) * 0.3 * var(--vt-speed, 1)) linear both;
+}
+html:is([data-vt="open"], [data-vt="close"])::view-transition-new(vt-stage) {
+  animation: vt-in calc(var(--vt-d) * 0.4 * var(--vt-speed, 1))
+    calc(var(--vt-d) * 0.75 * var(--vt-speed, 1)) linear both;
+}

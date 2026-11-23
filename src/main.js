@@ -1,12 +1,7 @@
 import { initMotion } from "./components/motion.js";
 import { initBackgroundArt } from "./components/background-art.js";
 import { initLedMatrix } from "./components/led-matrix.js";
-import {
-  getBootDelay,
-  getBootSteps,
-  getBootTiming,
-  getTypingFrames,
-} from "./terminal/boot.js";
+import { runBoot } from "./components/boot.js";
 import {
   getMascotHint,
   getTerminalPlaceholder,
@@ -16,19 +11,17 @@ import { initCertificates } from "./components/certificates.js";
 import { initFocusTooling } from "./components/focus-tooling.js";
 import { initFigures } from "./components/figures.js";
 import { initMenubar } from "./components/menubar.js";
+import { initLocalTime } from "./components/local-time.js";
 import { playHeroIntro } from "./components/hero-terminal.js";
 
 // The easter egg that flashes "type alias" in the prompt lives on the hero console.
 const input = document.querySelector("#hero-input");
 const bootScreen = document.querySelector("#boot-screen");
-const bootLog = document.querySelector("#boot-log");
-const skipBoot = document.querySelector("#skip-boot");
 const pandaMascot = document.querySelector("#panda-mascot");
 const mascotHint = document.querySelector("#mascot-hint");
 
 let mascotClicks = 0;
 let aliasTeaserTimer;
-const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 function flashAliasPlaceholder() {
   input.placeholder = getTerminalPlaceholder(true);
@@ -63,114 +56,37 @@ function handleMascotClick() {
   pandaMascot.classList.add("has-hint");
 }
 
-// The tap moment plays once per browser session; reloads and later pages skip it.
-function hasSeenBoot() {
-  try {
-    return sessionStorage.getItem("booted") === "1";
-  } catch {
-    return false;
-  }
-}
-
-function markBootSeen() {
-  try {
-    sessionStorage.setItem("booted", "1");
-  } catch {
-    // Private mode: the boot may replay, which is harmless.
-  }
-}
-
-function revealPortfolio() {
-  if (!bootScreen || bootScreen.hidden) return;
-
-  const { exitDelay } = getBootTiming();
-
-  bootScreen.classList.add("is-complete");
-  bootScreen.hidden = true;
-  document.body.classList.remove("is-booting");
-  window.setTimeout(() => bootScreen.remove(), exitDelay);
-}
-
-async function runBootSequence() {
-  const { typingDelay, completionDelay } = getBootTiming();
-  if (
-    !bootScreen ||
-    reducedMotion.matches ||
-    window.location.hash ||
-    hasSeenBoot()
-  )
-    return;
-  markBootSeen();
-  bootScreen.hidden = false;
-  document.body.classList.add("is-booting");
-  // Always release the screen if an unexpected error interrupts startup.
-  const fallbackTimer = window.setTimeout(revealPortfolio, 10000);
-
-  for (const step of getBootSteps()) {
-    const text =
-      step.kind === "command" ? `max@portfolio:~$ ${step.text}` : step.text;
-    const line = document.createElement("span");
-    line.className = `boot-line ${step.kind}`;
-    bootLog.append(line, document.createElement("br"));
-
-    for (const frame of getTypingFrames(text)) {
-      if (bootScreen.hidden) {
-        window.clearTimeout(fallbackTimer);
-        return;
-      }
-      line.textContent = frame;
-
-      if (!reducedMotion.matches) {
-        await new Promise((resolve) => window.setTimeout(resolve, typingDelay));
-      }
-    }
-
-    if (!reducedMotion.matches) {
-      await new Promise((resolve) =>
-        window.setTimeout(resolve, getBootDelay()),
-      );
-    }
-  }
-
-  if (!reducedMotion.matches) {
-    await new Promise((resolve) => window.setTimeout(resolve, completionDelay));
-  }
-
-  window.clearTimeout(fallbackTimer);
-  revealPortfolio();
-}
-
 pandaMascot.addEventListener("click", handleMascotClick);
-skipBoot?.addEventListener("click", revealPortfolio);
 initCertificates();
 initFocusTooling();
-// The skills graph (its layout and drawing code) loads the first time the Skills
-// window opens, so it does not weigh on the first screen.
-let skillsLoading = false;
-const loadSkills = () => {
-  if (skillsLoading || document.documentElement.dataset.scene !== "skills")
-    return;
-  skillsLoading = true;
-  import("./components/skills.js").then((module) => module.initSkills());
-};
-window.addEventListener("portfolio:scene", loadSkills);
 initScenes();
-loadSkills();
 initMenubar();
+initLocalTime();
 initFigures();
 initBackgroundArt();
-// The desk's motion (parallax, the OLED's attract mode) loads after first paint.
+const motion = initMotion();
+// The desk's motion (the OLED's attract mode) loads after first paint.
 (window.requestIdleCallback ?? ((fn) => setTimeout(fn, 600)))(() =>
-  import("./components/desk.js").then((module) => module.initDesk()),
+  import("./components/desk.js").then((module) => module.initDesk(motion)),
 );
-// The Asteroids screensaver and game load after first paint, or when `play` is typed.
-(window.requestIdleCallback ?? ((fn) => setTimeout(fn, 800)))(() =>
-  import("./components/arcade.js").then((module) => module.initScreensaver()),
+// The panda (poses, hints, reactions) takes over its button after first paint;
+// until then the click handler above answers.
+(window.requestIdleCallback ?? ((fn) => setTimeout(fn, 400)))(() =>
+  import("./components/panda.js").then((module) => {
+    pandaMascot.removeEventListener("click", handleMascotClick);
+    module.initPanda({ hero: pandaMascot, heroSay: mascotHint });
+  }),
 );
+// The pop-up menus replace the native selects after first paint.
+(window.requestIdleCallback ?? ((fn) => setTimeout(fn, 500)))(() =>
+  import("./components/popup-menu.js").then((module) =>
+    module.initPopupMenus(),
+  ),
+);
+// The Asteroids game loads when `play` is typed.
 window.addEventListener("portfolio:play", () =>
   import("./components/arcade.js").then((module) => module.startGame()),
 );
-const motion = initMotion();
 motion.register(input, startAliasTeaser);
 initLedMatrix(motion);
 document.documentElement.classList.add("is-enhanced");
@@ -179,9 +95,24 @@ document.documentElement.classList.add("is-enhanced");
 const oled = import("./components/oled-name.js").then((module) =>
   module.initOledName(),
 );
-runBootSequence().finally(() =>
+// The start screen (once per visit), then the hero's typed intro.
+runBoot(bootScreen).finally(() =>
   playHeroIntro(
     () => oled.then((o) => (o ? o.play() : playHeroReveal())),
     () => oled.then((o) => (o ? o.finish() : playHeroReveal())),
   ),
+);
+
+// For anyone who opens DevTools: a greeting, and one of the hunt's flags,
+// base64-encoded (see data/flags.js and `flags` in the console). The flag sits
+// inside a fixed 63 bytes of random padding, off a 3-byte boundary, so the
+// blob's length says nothing about the flag, and the well-known encoding of
+// "flag{" (ZmxhZ3...) never appears: you have to decode it to see it.
+console.log(
+  "%cmax@portfolio:~$%c hello, fellow snoop. ʕ•ᴥ•ʔ",
+  "color:#7a2e5d;font:700 14px monospace",
+  "font:14px monospace",
+);
+console.log(
+  "Found a bug? Report it the proper way: /.well-known/security.txt\nSince you're here, decode this: Y01yaHNsRDJmbGFne3Nub29weV9zbm9vcGVyfVdXV2VRaG9BdmpwT2RxVlRKTktMTW02cmxIRDFpcGlwQmRR\nType flags in the site's console to see the hunt.",
 );

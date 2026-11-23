@@ -12,7 +12,7 @@ import {
   Mesh,
   MeshBasicMaterial,
 } from "three";
-import { approach } from "./card-math.js";
+import { approach } from "./ease.js";
 import { baseFigure, boundingRadius, colorsFrom, fitCamera } from "./common.js";
 import { SECRET_BYTES, jitter, stairs } from "./staircase-math.js";
 

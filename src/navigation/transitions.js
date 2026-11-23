@@ -13,10 +13,15 @@ export function pickTransition(
   { initial = false, direction = 0, order = [] } = {},
 ) {
   if (initial || !from) return "none";
-  // The write-up is a native dialog with its own motion.
-  if (from.read || to.read) return "none";
   if (from.scene === to.scene) {
+    // A landing and the page opened from it: the tile opens into the page.
+    const deeper = (a, b) => (!a && b ? "open" : a && !b ? "close" : null);
+    if (to.scene === "skills" && from.category !== to.category) {
+      return deeper(from.category, to.category) ?? "fade";
+    }
     if (to.scene === "work" && (from.slug ?? null) !== (to.slug ?? null)) {
+      const depth = deeper(from.slug, to.slug);
+      if (depth) return depth;
       const a = order.indexOf(from.slug ?? order[0]);
       const b = order.indexOf(to.slug ?? order[0]);
       return dir(a, b, direction);

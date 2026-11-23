@@ -33,10 +33,15 @@
   overflow: visible;
 }
 
-.output.is-panda-output .result.panda {
+.output.is-panda-output .result.panda-art {
   display: block;
   max-width: 100%;
+  /* Sideways only: the output around it does the vertical scrolling. */
   overflow-x: auto;
+  overflow-y: hidden;
+  /* The braille drawing only holds together unwrapped. */
+  overflow-wrap: normal;
+  white-space: pre;
   font-size: clamp(5px, 1vw, 14px);
   line-height: 1.1;
 }
@@ -106,7 +111,7 @@
   color: var(--terminal-error);
 }
 
-.result.panda {
+.result.panda-art {
   color: var(--acid);
 }
 
@@ -164,4 +169,54 @@
 
 .result.suggestions.is-flash {
   animation: suggestionFlash 280ms ease-out;
+}
+
+/* The console's "view case study" link to a project's case study. */
+.project-insights-btn {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: var(--hair);
+  border-radius: var(--button-radius);
+  padding: 7px 14px;
+  background: var(--panel);
+  cursor: pointer;
+  font: 500 var(--step-0) var(--font-chrome);
+  color: var(--ink);
+  letter-spacing: 0.02em;
+  line-height: 1;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.project-insights-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  stroke-width: 1.25;
+}
+
+.project-insights-btn:hover,
+.project-insights-btn:focus-visible {
+  border-color: var(--navy);
+  background: var(--navy);
+  color: var(--panel);
+  text-decoration: none;
+}
+
+.project-insights-btn:active {
+  border-color: var(--ink);
+  background: var(--ink);
+}
+
+.project-insights-btn:focus-visible {
+  outline: 2px solid var(--acid);
+  outline-offset: 3px;
 }

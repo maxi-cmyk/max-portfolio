@@ -13,7 +13,7 @@ import {
   MeshBasicMaterial,
   Vector3,
 } from "three";
-import { approach } from "./card-math.js";
+import { approach } from "./ease.js";
 import { baseFigure, boundingRadius, colorsFrom, fitCamera } from "./common.js";
 import {
   HEIGHT,

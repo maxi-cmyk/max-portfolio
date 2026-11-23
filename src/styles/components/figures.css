@@ -44,85 +44,27 @@ html.is-moving .stage-canvas {
 .figure-host.is-turning::after {
   opacity: 0;
 }
-.figure-frame-small .figure-host {
-  height: 150px;
-}
 .figure-fallback {
   display: grid;
   height: 100%;
   place-items: center;
 }
-.figure-fallback .px-card {
-  width: min(100%, 300px);
-  height: auto;
-}
 .figure-host[data-figure-state="live"] .figure-fallback,
 .figure-host[data-figure-state="still"] .figure-fallback {
   visibility: hidden;
 }
-.figure-action {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 11;
-  min-height: 44px;
-}
-.figure-host[data-figure-state="fallback"] ~ .figure-action {
-  display: none;
-}
 .figure-caption {
   margin: 12px 0 0;
   color: var(--muted);
-  font: var(--step--1) / 1.5 var(--font-mono);
+  font: var(--step--1) / 1.5 var(--font-text);
 }
 @media (min-width: 700px) {
   .figure-host {
     height: 300px;
   }
-  .figure-frame-small {
-    max-width: 380px;
-  }
 }
 html.is-scenes #contact .contact-card {
   margin: 0 0 16px;
-}
-
-/* On a laptop the Contact window pairs its links with a large card. */
-@media (min-width: 900px) {
-  html.is-scenes #contact:not([hidden]) {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 460px);
-    column-gap: 48px;
-    align-content: start;
-  }
-  html.is-scenes #contact > .titlebar {
-    grid-column: 1 / -1;
-  }
-  html.is-scenes #contact > :not(.titlebar):not(.figure-frame) {
-    grid-column: 1;
-  }
-  html.is-scenes #contact > .figure-frame {
-    grid-column: 2;
-    grid-row: 2 / span 6;
-    max-width: none;
-  }
-  html.is-scenes #contact .figure-host {
-    height: clamp(300px, 52vh, 500px);
-  }
-}
-
-/* On phones the wake button stays for keyboards only; touch users tap the card. */
-@media (max-width: 699px) {
-  .figure-action:not(:focus-visible) {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    min-height: 0;
-    padding: 0;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    border: 0;
-  }
 }
 
 /* ---------- Project figures in the Work and case-study windows ---------- */
@@ -184,18 +126,10 @@ html.is-scenes .stage .figure-host {
   color: var(--ink);
   font: var(--step--1) / 1.5 var(--font-code);
 }
-.stage.is-empty .figure-frame,
-.stage.is-empty .figure-controls,
-.stage.is-empty .figure-readout,
-.stage:not(.is-empty) [data-stage-wip],
 .stage.no-3d .figure-frame,
 .stage.no-3d .figure-controls,
 .stage.no-3d .figure-readout {
   display: none;
-}
-.stage.is-empty [data-stage-wip] {
-  justify-self: center;
-  margin: 48px 0;
 }
 .stage .figure-caption {
   margin: 0;

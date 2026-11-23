@@ -18,7 +18,9 @@ coverage/
 .DS_Store
 
 nextSteps.md
+/docs/archive/
 .impeccable/
 
 public/assets/social-preview.png
 public/assets/social-preview.svg
+drafts/

@@ -14,7 +14,7 @@ import {
   MeshBasicMaterial,
   SphereGeometry,
 } from "three";
-import { approach } from "./card-math.js";
+import { approach } from "./ease.js";
 import {
   LED,
   baseFigure,

@@ -3,17 +3,16 @@ import test from "node:test";
 import { allProjects } from "../src/data/projects.js";
 import { parseRoute } from "../src/navigation/routes.js";
 import {
-  HERO_CHIPS,
   LED_MAX,
   getHeroCandidates,
   heroCommand,
 } from "../src/terminal/hero-script.js";
 
-test("every chip runs and prints something", () => {
-  for (const chip of HERO_CHIPS) {
-    const result = heroCommand(chip);
-    assert.ok(result.output, `${chip} printed nothing`);
-    assert.notEqual(result.kind, "error", chip);
+test("common typed commands run and print something", () => {
+  for (const command of ["about", "skills", "projects", "contact", "resume"]) {
+    const result = heroCommand(command);
+    assert.ok(result.output, `${command} printed nothing`);
+    assert.notEqual(result.kind, "error", command);
   }
 });
 

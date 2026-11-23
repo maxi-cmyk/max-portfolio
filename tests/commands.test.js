@@ -11,8 +11,10 @@ import {
   isWip,
   resolveCategory,
 } from "../src/data/projects.js";
-import { getCaseStudySteps } from "../src/data/case-study-steps.js";
-import { getInsightContentOrder } from "../src/components/subpages/project-modal.js";
+import {
+  getCaseStudySteps,
+  getCaseStudyView,
+} from "../src/data/case-study-steps.js";
 import {
   focusTechnologyGroups,
   formatFocusToolsForTerminal,
@@ -264,15 +266,16 @@ test("every project publishes a visitor-facing case study", () => {
       "view case study",
       project.name,
     );
-    assert.equal(project.insights.sections.length, 3, project.name);
-    assert.ok(project.insights.contentOrder.length >= 3, project.name);
+    // The old full write-up's sections now live in the steps.
+    assert.equal("sections" in project.insights, false, project.name);
+    assert.equal("contentOrder" in project.insights, false, project.name);
     assert.equal("status" in project.insights, false, project.name);
     assert.equal("statusLabel" in project.insights, false, project.name);
     assert.equal("evidence" in project.insights, false, project.name);
   }
 });
 
-test("case studies define project-specific narrative structures and order", () => {
+test("case studies define project-specific narrative structures", () => {
   const conway = caseStudyProjects.find(
     (project) => project.slug === "conway-game-of-life",
   );
@@ -287,43 +290,17 @@ test("case studies define project-specific narrative structures and order", () =
     (project) => project.slug === "sentinel",
   );
 
-  assert.deepEqual(getInsightContentOrder(conway.insights), [
-    "summary",
-    "howItWorks",
-    "diagram",
-    "sections",
-  ]);
-  assert.equal(conway.insights.howItWorks.steps.length, 3);
+  assert.equal(conway.insights.howItWorks.steps.length, 4);
   assert.match(conway.insights.howItWorks.steps[0].body, /torus/i);
-  assert.deepEqual(getInsightContentOrder(itspeak.insights), [
-    "summary",
-    "pipeline",
-    "sections",
-  ]);
   assert.equal(itspeak.insights.pipeline.lanes.length, 2);
   assert.match(itspeak.insights.pipeline.merge.detail, /deterministic/i);
-  assert.deepEqual(getInsightContentOrder(echo.insights), [
-    "summary",
-    "lifecycle",
-    "sections",
-  ]);
   assert.equal(echo.insights.lifecycle.steps.length, 6);
   assert.equal(echo.insights.lifecycle.steps[2].state, "gate");
-  assert.deepEqual(getInsightContentOrder(asteroids.insights), [
-    "summary",
-    "frameLoop",
-    "sections",
-  ]);
   assert.equal(asteroids.insights.frameLoop.budget, "20 ms");
   assert.match(
     asteroids.insights.frameLoop.phases.map(({ detail }) => detail).join(" "),
     /capped object pools.*framebuffer.*LEDC/s,
   );
-  assert.deepEqual(getInsightContentOrder(sentinel.insights), [
-    "summary",
-    "eventSequence",
-    "sections",
-  ]);
   assert.deepEqual(
     sentinel.insights.eventSequence.devices.map(({ id }) => id),
     ["sensor", "camera"],
@@ -335,23 +312,6 @@ test("case studies define project-specific narrative structures and order", () =
   assert.deepEqual(
     sentinel.insights.eventSequence.steps.map(({ actorLabel }) => actorLabel),
     ["PIR node", "Blynk V6", "ESP32-CAM", "ESP32-CAM", "ESP32-CAM"],
-  );
-});
-
-test("case-study ordering skips absent, duplicate, and unknown blocks", () => {
-  assert.deepEqual(
-    getInsightContentOrder({
-      contentOrder: [
-        "summary",
-        "lifecycle",
-        "lifecycle",
-        "unknown",
-        "sections",
-      ],
-      lifecycle: { steps: [] },
-      sections: [],
-    }),
-    ["lifecycle"],
   );
 });
 
@@ -388,19 +348,6 @@ test("new projects share canonical records across their relevant focuses", () =>
   );
   assert.equal(allProjects.filter((p) => p === music).length, 1);
   assert.equal(allProjects.filter((p) => p === cya).length, 1);
-  assert.deepEqual(getInsightContentOrder(music.insights), [
-    "summary",
-    "howItWorks",
-    "diagram",
-    "sections",
-  ]);
-  assert.deepEqual(getInsightContentOrder(cya.insights), [
-    "summary",
-    "results",
-    "diagram",
-    "howItWorks",
-    "sections",
-  ]);
 });
 
 test("music_LEDs explains Fourier and linear algebra without obsolete Spotify features", () => {
@@ -417,7 +364,9 @@ test("cya qualifies evaluation results and attributes the team contribution", ()
   const cya = caseStudyProjects.find(({ slug }) => slug === "cya");
   const copy = JSON.stringify(cya);
   assert.equal(cya.meta, "TechJam 26 · participant");
-  assert.match(copy, /99\.29% on 141 images/);
+  assert.match(copy, /99\.29%/);
+  assert.match(copy, /140 \/ 141 images/);
+  assert.match(copy, /not guaranteed accuracy on new generators/);
   assert.match(copy, /uncalibrated/);
   assert.match(copy, /Shan He built.*React/);
   assert.match(copy, /Rae developed/);
@@ -508,7 +457,8 @@ test("missing facts are explicit WIP placeholders, never invented", () => {
   );
   assert.equal(isWip(timing.role), true);
   assert.equal(isWip(timing.proof), true);
-  assert.match(timing.insights.sections.at(-1).body, /^WIP/);
+  const last = getCaseStudyView(timing.insights).at(-1);
+  assert.match(last.more.at(-1), /^Results: WIP/);
   for (const project of allProjects) {
     assert.equal(typeof project.role, "string", project.name);
     assert.equal(typeof project.proof, "string", project.name);
@@ -520,14 +470,26 @@ test("missing facts are explicit WIP placeholders, never invented", () => {
 });
 
 test("every case study can be read as short steps", () => {
+  const words = (text = "") => text.split(/\s+/).filter(Boolean).length;
   for (const project of caseStudyProjects) {
+    const view = getCaseStudyView(project.insights);
     const steps = getCaseStudySteps(project.insights);
     assert.ok(steps.length >= 3, `${project.name}: ${steps.length} steps`);
-    for (const step of steps) {
+    // Seven numbered steps is what the step rail fits on a phone.
+    assert.ok(view.length <= 7, `${project.name}: ${view.length} steps`);
+    // Algorithm projects show their map on the overview only; the rest draw
+    // it beside every step.
+    const mapped = project.insights.layout !== "algorithm";
+    for (const step of view) {
       assert.ok(step.title && step.body, project.name);
       assert.ok(
-        step.body.split(/\s+/).length <= 60,
-        `${project.name}: ${step.title}`,
+        words(step.body) <= 60,
+        `${project.name}: ${step.title} lead is too long`,
+      );
+      const total = words(step.body) + words((step.more ?? []).join(" "));
+      assert.ok(
+        total >= 25 || step.code || step.table || mapped,
+        `${project.name}: ${step.title} is a lone sentence`,
       );
     }
   }

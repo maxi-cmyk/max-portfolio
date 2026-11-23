@@ -13,22 +13,6 @@
     font-size: var(--step--1);
   }
 
-  .boot-screen {
-    padding: 14px;
-  }
-
-  .boot-terminal {
-    min-height: 300px;
-    box-shadow: var(--window-shadow);
-  }
-
-  .boot-topline {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 30px;
-  }
-
   .intro {
     padding: 80px 0 48px;
   }

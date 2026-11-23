@@ -11,58 +11,11 @@ body {
   font-size: var(--step-1);
 }
 
-.boot-screen {
-  background: var(--bg);
-}
-
-.boot-terminal {
-  border: var(--hair);
-  border-radius: 0;
-  background: var(--panel);
-  box-shadow: var(--window-shadow);
-}
-
-.boot-terminal {
-  font-family: var(--font-code);
-}
-
-/* System 7 title bar: hairline pinstripes with the title on a plate. */
-.boot-topline {
-  background: repeating-linear-gradient(
-    0deg,
-    var(--ink) 0 1px,
-    var(--panel) 1px 3px
-  );
-}
-
-.boot-topline {
-  margin: calc(clamp(24px, 5vw, 52px) * -1);
-  margin-bottom: 28px;
-  padding: 12px clamp(24px, 5vw, 52px);
-  border-bottom: var(--hair);
-  color: var(--ink);
-  font-size: var(--step--1);
-  font-weight: 500;
-}
-
-.boot-topline p,
-.boot-topline button {
-  padding: 2px 10px;
-  background: var(--panel);
-}
-
-.boot-topline button {
-  color: var(--acid);
-  font-weight: 500;
-}
-
-.boot-line.command,
 .command {
   color: var(--warm);
   font-weight: 500;
 }
 
-.boot-line.success,
 .prompt {
   color: var(--acid);
   font-weight: 500;

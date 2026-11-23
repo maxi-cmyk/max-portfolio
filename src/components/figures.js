@@ -92,5 +92,23 @@ export function initFigures() {
   // The observer can be quiet in a background tab, so also try shortly after
   // load and whenever the scene changes; visible, waiting hosts are mounted.
   setTimeout(() => idle(mountVisible), 600);
+  // Once the page has settled, get every figure ready ahead of time, the ones
+  // a visitor meets first (Work's first project) first.
+  setTimeout(
+    () =>
+      idle(async () => {
+        try {
+          const s = await load();
+          const first = ["winding"];
+          await s.warm(
+            [...first, ...s.figures.filter((id) => !first.includes(id))],
+            idle,
+          );
+        } catch {
+          // Warming is only a head start; the figures still load on demand.
+        }
+      }),
+    2500,
+  );
   window.addEventListener("portfolio:scene", () => idle(mountVisible));
 }

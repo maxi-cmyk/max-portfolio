@@ -22,6 +22,32 @@ test("going deeper opens a window and coming back closes it", () => {
   );
 });
 
+test("a landing opens into the page picked from it and closes back", () => {
+  assert.equal(
+    pick({ scene: "work", slug: null }, { scene: "work", slug: "b" }),
+    "open",
+  );
+  assert.equal(
+    pick({ scene: "work", slug: "b" }, { scene: "work", slug: null }),
+    "close",
+  );
+  assert.equal(
+    pick({ scene: "skills" }, { scene: "skills", category: "languages" }),
+    "open",
+  );
+  assert.equal(
+    pick({ scene: "skills", category: "languages" }, { scene: "skills" }),
+    "close",
+  );
+  assert.equal(
+    pick(
+      { scene: "skills", category: "languages" },
+      { scene: "skills", category: "tools" },
+    ),
+    "fade",
+  );
+});
+
 test("changing topic fades", () => {
   for (const [from, to] of [
     ["work", "skills"],
@@ -60,11 +86,6 @@ test("moving between siblings slides in the right direction", () => {
     pick({ scene: "work", slug: "c" }, { scene: "work", slug: "a" }),
     "slide-prev",
   );
-  // The first project is shown when no slug is given.
-  assert.equal(
-    pick({ scene: "work", slug: null }, { scene: "work", slug: "b" }),
-    "slide-next",
-  );
   // Wrapping around still follows the button that was pressed.
   assert.equal(
     pick(
@@ -98,24 +119,10 @@ test("moving between siblings slides in the right direction", () => {
   );
 });
 
-test("first paint, the write-up dialog and no-op moves do not animate", () => {
+test("first paint and no-op moves do not animate", () => {
   assert.equal(pick(null, { scene: "work" }), "none");
   assert.equal(
     pick({ scene: "hub" }, { scene: "work" }, { initial: true }),
-    "none",
-  );
-  assert.equal(
-    pick(
-      { scene: "case", slug: "a", step: 1 },
-      { scene: "case", slug: "a", step: 1, read: true },
-    ),
-    "none",
-  );
-  assert.equal(
-    pick(
-      { scene: "case", slug: "a", step: 1, read: true },
-      { scene: "case", slug: "a", step: 1 },
-    ),
     "none",
   );
   assert.equal(
@@ -165,5 +172,93 @@ test("a cancelled transition still applies its scene change once", async () => {
   await fx.run("none", { apply: () => applied++ });
   fx.cancel();
   assert.equal(applied, 1);
+  delete globalThis.document;
+});
+
+test("every animated kind has motion in view-transitions.css", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const css = await readFile(
+    new URL("../src/styles/components/view-transitions.css", import.meta.url),
+    "utf8",
+  );
+  for (const kind of TRANSITIONS.filter((k) => k !== "none")) {
+    assert.ok(css.includes(`[data-vt="${kind}"]`), kind);
+  }
+});
+
+// A stand-in for document.startViewTransition: the update runs on a later
+// tick, as in a browser, and skipping still lets it run.
+function fakeDocument() {
+  const root = {
+    dataset: {},
+    style: { setProperty() {} },
+    classList: { toggle() {} },
+  };
+  const started = [];
+  return {
+    started,
+    documentElement: root,
+    querySelectorAll: () => [],
+    startViewTransition(update) {
+      let done;
+      const finished = new Promise((r) => (done = r));
+      const vt = {
+        finished,
+        skipped: false,
+        skipTransition() {
+          vt.skipped = true;
+        },
+      };
+      started.push(vt);
+      setTimeout(async () => {
+        await update();
+        setTimeout(done, 5);
+      }, 1);
+      return vt;
+    },
+  };
+}
+
+test("a view transition names its pairs, applies once and cleans up", async () => {
+  const doc = fakeDocument();
+  globalThis.document = doc;
+  const icon = { style: {} };
+  const page = { style: {} };
+  const seen = [];
+  const fx = createTransitions({ reducedMotion: () => false });
+  let applied = 0;
+  await fx.run("open", {
+    apply: () => {
+      applied++;
+      seen.push(
+        icon.style.viewTransitionName || "",
+        doc.documentElement.dataset.vt,
+      );
+    },
+    pairs: {
+      old: () => [[icon, "vt-window"]],
+      new: () => [[page, "vt-window"]],
+    },
+  });
+  assert.equal(applied, 1);
+  // The old name is gone before the swap; the kind is set while it runs.
+  assert.deepEqual(seen, ["", "open"]);
+  assert.equal(page.style.viewTransitionName, "");
+  assert.equal(doc.documentElement.dataset.vt, undefined);
+  assert.equal(fx.isRunning(), false);
+  delete globalThis.document;
+});
+
+test("a newer move skips the running view transition without applying twice", async () => {
+  const doc = fakeDocument();
+  globalThis.document = doc;
+  const fx = createTransitions({ reducedMotion: () => false });
+  const log = [];
+  const first = fx.run("slide-next", { apply: () => log.push("first") });
+  const second = fx.run("slide-next", { apply: () => log.push("second") });
+  await Promise.all([first, second]);
+  assert.deepEqual(log, ["first", "second"]);
+  assert.equal(doc.started[0].skipped, true);
+  assert.equal(doc.documentElement.dataset.vt, undefined);
   delete globalThis.document;
 });

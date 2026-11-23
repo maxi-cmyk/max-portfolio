@@ -1,3 +1,5 @@
+import { unseal } from "../../data/sealed.js";
+
 const panda = String.raw`
               ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠀⠀⠀⠀⠀⠀⠀⢀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⡗⠀⠀⠉⠑⢢⣴⣿⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -30,10 +32,13 @@ export const pandaStages = [
   "[SYS] panda.sys: authentication accepted.",
   pandaArt,
   "welcome, thebananachip. ʕ•ᴥ•ʔ",
+  // The hunt's first flag, readable only with the alias (data/sealed.js).
+  unseal("alias", "thebananachip"),
 ];
 
 export const pandaCommand = {
   kind: "panda",
+  flag: "alias",
   stages: pandaStages,
   output: pandaStages.join("\n"),
 };

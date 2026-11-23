@@ -37,9 +37,18 @@ export function renderWork(categories = [], slug = null) {
   if (landingEl) {
     landingEl.hidden = !landing;
     landingEl.querySelectorAll("[data-group]").forEach((group) => {
-      group.hidden =
-        activeCategories.length > 0 &&
-        !activeCategories.includes(group.dataset.group);
+      for (const tile of group.querySelectorAll("[data-tile-slug]")) {
+        const { tileSlug, primaryGroup } = tile.dataset;
+        const project = allProjects.find(({ slug }) => slug === tileSlug);
+        // Show each project once, preferring its primary group when selected.
+        const preferred =
+          !activeCategories.length || activeCategories.includes(primaryGroup)
+            ? primaryGroup
+            : activeCategories.find((id) => project.categories.includes(id));
+        tile.hidden = group.dataset.group !== preferred;
+        tile.firstElementChild.href = workHash(activeCategories, tileSlug);
+      }
+      group.hidden = !group.querySelector("[data-tile-slug]:not([hidden])");
     });
   }
   document.querySelectorAll("[data-work-filter]").forEach((button) => {
@@ -54,6 +63,13 @@ export function renderWork(categories = [], slug = null) {
   if (landing) {
     const status = document.getElementById("work-count");
     if (status) status.textContent = `${slugs.length} projects`;
+    const summary = work?.querySelector("[data-work-summary]");
+    const groups = landingEl?.querySelectorAll(
+      "[data-group]:not([hidden])",
+    ).length;
+    if (summary && groups !== undefined) {
+      summary.textContent = `${slugs.length} project${slugs.length === 1 ? "" : "s"} in ${groups} group${groups === 1 ? "" : "s"}.`;
+    }
     renderPager(slugs, 0);
     return { slugs, index: 0, current: null, landing: true };
   }
@@ -83,10 +99,6 @@ function ensureControls() {
   controls.innerHTML = `<label class="popup"><span>Show</span><select id="work-group" aria-label="Show projects in"></select></label>
     <label class="popup"><span>Project</span><select id="work-jump" aria-label="Go to project"></select></label>`;
   document.getElementById("work-projects")?.before(controls);
-  const exits = document.createElement("p");
-  exits.className = "exit-row";
-  exits.innerHTML = `<a class="push" id="work-exit" href="#work">‹ Selected work</a><a class="push" href="#home">Home</a>`;
-  work.prepend(exits);
   const status = document.createElement("div");
   status.className = "statusbar";
   status.setAttribute("role", "group");
@@ -104,7 +116,6 @@ function renderPager(slugs, index) {
   const hash = (slug) => workHash(activeCategories, slug);
   const prev = slugs[(index - 1 + slugs.length) % slugs.length];
   const next = slugs[(index + 1) % slugs.length];
-  document.getElementById("work-exit").href = workHash(activeCategories);
   document.getElementById("work-prev").href = hash(prev);
   document.getElementById("work-next").href = hash(next);
 

@@ -7,6 +7,7 @@ import {
   getFilteredProjects,
 } from "../src/data/projects.js";
 import { parseRoute, workHash } from "../src/navigation/routes.js";
+import { getCaseStudyView } from "../src/data/case-study-steps.js";
 
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 test("All work and overlapping OR filters keep canonical order without duplicates", () => {
@@ -116,4 +117,35 @@ test("Static HTML exposes work, real links, case-study fallback and certificates
   assert.doesNotMatch(html, /A few things I.ve built/);
   assert.ok(html.includes("/assets/Max_Leong_Resume.pdf"));
   assert.ok(html.includes("/assets/AI-professional-preview.webp"));
+});
+
+test("every project card opens its case study from a strip that lists the steps", () => {
+  for (const project of allProjects) {
+    const card = html.slice(
+      html.indexOf(`data-project-slug="${project.slug}"`),
+      html.indexOf(
+        "</article>",
+        html.indexOf(`data-project-slug="${project.slug}"`),
+      ),
+    );
+    const strip = card.match(/<section class="case-strip"[\s\S]*?<\/section>/);
+    assert.ok(strip, `${project.name}: no case-study strip`);
+    const steps = getCaseStudyView(project.insights);
+    const links = [...strip[0].matchAll(/<li><a href="([^"]+)"/g)].map(
+      (m) => m[1],
+    );
+    assert.equal(links.length, steps.length, project.name);
+    assert.ok(strip[0].includes(`· ${steps.length} steps`), project.name);
+    links.forEach((hash, i) => {
+      const route = parseRoute(hash);
+      assert.equal(route.kind, "project", hash);
+      assert.equal(route.slug, project.slug, hash);
+      assert.equal(route.step ?? 1, i + 1, hash);
+    });
+    // The strip comes right after the hook, before the facts and datasheet.
+    assert.ok(
+      card.indexOf("case-strip") < card.indexOf("project-card-tags"),
+      project.name,
+    );
+  }
 });

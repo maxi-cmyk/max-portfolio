@@ -63,7 +63,7 @@
 .sheet-bar small {
   grid-column: 1 / -1;
   color: var(--muted);
-  font: var(--step--1) / 1.4 var(--font-chrome);
+  font: var(--step--1) / 1.4 var(--font-text);
 }
 .case-sheet:empty {
   display: none;

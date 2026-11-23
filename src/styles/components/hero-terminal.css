@@ -1,5 +1,4 @@
-/* The About window as a console: typed banner lines, an output pane, a prompt, and
-   quick commands as buttons. The window's own look stays; this adds the rows. */
+/* The About console contains the typed banner, output pane and command prompt. */
 .hero-line {
   margin: 8px 0 4px;
   color: var(--muted);
@@ -16,20 +15,14 @@ html.is-scenes #home .about .lede {
   margin-top: 6px;
 }
 .about.is-intro #site-title,
-.about.is-intro .lede,
-.about.is-intro .hero-featured {
+.about.is-intro .lede {
   opacity: 0;
 }
 .about.is-intro-lede #site-title {
   opacity: 1;
 }
-.about .lede,
-.about .hero-featured {
+.about .lede {
   transition: opacity 240ms ease-out;
-}
-/* One project, named on the first screen: a single line that opens it. */
-.hero-featured {
-  margin: 2px 0 0;
 }
 /* On a phone the sentence drops a size so the six icons stay on the first screen. */
 @media (max-width: 699px) {
@@ -38,55 +31,61 @@ html.is-scenes #home .about .lede {
     line-height: 1.38;
   }
 }
-.hero-featured a {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 2px 8px;
-  min-height: 44px;
-  align-content: center;
-  color: var(--ink);
-  font: var(--step-0) / 1.3 var(--font-text);
-  text-decoration: none;
-}
-.hero-featured-tag {
-  color: var(--acid);
-  font: var(--step--1) / 1 var(--font-chrome);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.hero-featured-name {
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-.hero-featured-meta {
-  color: var(--muted);
-}
-.hero-featured a:hover .hero-featured-name,
-.hero-featured a:focus-visible .hero-featured-name {
-  text-decoration-thickness: 2px;
-}
-
+/* One terminal surface: the output above, the prompt below, in a single thin
+   frame with a rule between them, not two boxes. */
 .hero-console {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 8px;
   padding: 0 16px 16px;
 }
 .hero-output {
-  max-height: 150px;
-  padding: 10px 12px;
+  max-height: var(--hero-output-max, 150px);
+  padding: 14px 14px 12px;
   border: var(--hair);
+  border-bottom: 0;
   background: #e7e6df;
   font: var(--step--1) / 1.45 var(--font-code);
+  /* Lines scrolled out of view fade at both edges instead of being cut; the
+     padding keeps the first and newest lines clear of the fades. */
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 14px,
+    #000 calc(100% - 10px),
+    transparent
+  );
+  scrollbar-color: #36508a transparent;
+  scrollbar-width: thin;
+}
+.hero-output::-webkit-scrollbar {
+  width: 8px;
+}
+.hero-output::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background: #36508a;
+}
+.hero-output::-webkit-scrollbar-track {
+  background: transparent;
 }
 .hero-output[hidden] {
   display: none;
 }
+/* The panda egg's art lets a console grow to show it all (terminal.css). This
+   console always scrolls instead: the small one keeps its height, and the egg
+   opens the full-size one anyway (hero-terminal.js). */
+.hero-output.is-panda-output {
+  overflow: auto;
+}
+.about:not(.is-terminal) .hero-output.is-panda-output {
+  max-height: var(--hero-output-max, 150px);
+}
 .hero-output .project-description,
 .hero-output .result {
   color: var(--ink);
+}
+/* The last result needs no gap under it: the rule follows. */
+.hero-output > .result:last-child {
+  margin-bottom: 4px;
 }
 .hero-prompt {
   display: flex;
@@ -94,11 +93,14 @@ html.is-scenes #home .about .lede {
   align-items: center;
   gap: 8px;
   min-height: 44px;
-  padding: 0 12px;
+  padding: 0 14px;
   border: var(--hair);
   background: var(--panel);
   cursor: text;
   font: var(--step-0) / 1.4 var(--font-code);
+}
+.is-dark .hero-prompt {
+  background: #07101f;
 }
 .hero-prompt .prompt {
   flex: 0 0 auto;
@@ -118,21 +120,13 @@ html.is-scenes #home .about .lede {
 }
 .hero-prompt input::placeholder {
   color: var(--terminal-placeholder);
+  text-overflow: ellipsis;
 }
+/* Focus: the prompt's own frame turns bright and doubles inward, so there is
+   no second ring around the box. */
 .hero-prompt:focus-within {
-  outline: 2px solid var(--acid);
-  outline-offset: 2px;
-}
-.hero-chips {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 5px;
-}
-.hero-chip {
-  min-height: 44px;
-  padding: 0 2px;
-  letter-spacing: 0.02em;
-  text-transform: none;
+  border-color: var(--acid);
+  box-shadow: inset 0 0 0 1px var(--acid);
 }
 .hero-output > pre.result,
 .hero-output .result-text {
@@ -145,7 +139,7 @@ html.is-scenes #home .about .lede {
     padding: 0 28px 24px;
   }
   .hero-output {
-    max-height: 190px;
+    --hero-output-max: 190px;
   }
 }
 @media (min-width: 1180px) {
@@ -153,7 +147,7 @@ html.is-scenes #home .about .lede {
     padding: 0 44px 32px;
   }
   .hero-output {
-    max-height: 132px;
+    --hero-output-max: 132px;
   }
 }
 /* A laptop screen is short: tighten the banner so the console fits beneath it. */
@@ -182,7 +176,8 @@ html.is-scenes #home .about .lede {
    and the green button on a laptop. The banner steps aside for the output. */
 html.is-scenes #home .about.is-terminal {
   position: fixed;
-  inset: calc(var(--bar-h, 26px) + 10px) 10px 10px;
+  inset: calc(var(--bar-h, 26px) + 10px) 10px
+    calc(10px + var(--console-viewport-bottom, 0px));
   z-index: 7;
   display: flex;
   flex-direction: column;

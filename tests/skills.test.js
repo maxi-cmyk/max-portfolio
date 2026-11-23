@@ -2,16 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { allProjects, otherProjects } from "../src/data/projects.js";
+import { getSkillGraph, practiceNode, skillId } from "../src/data/skills.js";
+import { getSkillStack, groupSkillUses } from "../src/data/skill-stack.js";
 import {
-  featuredProjectNodes,
-  getSkillGraph,
-  practiceNode,
-  projectsOfSkill,
-  skillId,
-  skillsOfProject,
-  topSkills,
-} from "../src/data/skills.js";
-import { parseRoute } from "../src/navigation/routes.js";
+  parentScene,
+  routeToScene,
+  sceneToHash,
+  sameScene,
+} from "../src/navigation/scenes.js";
+import { parseRoute, skillsHash } from "../src/navigation/routes.js";
 
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const graph = getSkillGraph();
@@ -39,27 +38,6 @@ test("every tag on every project becomes a skill, and skill ids are unique", () 
   assert.equal(skillId("DFT / FFT"), "dft-fft");
 });
 
-test("skills and projects link both ways", () => {
-  const python = graph.skills.find((s) => s.label === "Python");
-  assert.ok(projectsOfSkill(graph, python.id).some((p) => p.id === "cya"));
-  assert.ok(skillsOfProject(graph, "cya").some((s) => s.label === "PyTorch"));
-  for (const skill of graph.skills) {
-    for (const project of projectsOfSkill(graph, skill.id)) {
-      assert.ok(skillsOfProject(graph, project.id).includes(skill));
-    }
-  }
-});
-
-test("the first view is small and shows only shared skills", () => {
-  const top = topSkills(graph);
-  assert.ok(top.length >= 8 && top.length <= 12);
-  assert.ok(top.every((s) => s.count >= 2));
-  assert.equal(top[0].count >= top.at(-1).count, true);
-  const projects = featuredProjectNodes(graph);
-  assert.equal(projects.length, allProjects.length);
-  assert.ok(top.length + projects.length <= 20);
-});
-
 test("the algorithms practice backs C and Python with its reported figure", () => {
   assert.equal(practiceNode.external, true);
   assert.match(practiceNode.note, /114 of 150/);
@@ -79,15 +57,78 @@ test("every project link goes somewhere real", () => {
   }
 });
 
-test("each skill has a group and the static page lists every skill", () => {
-  const groups = new Set(graph.groups.map((g) => g.id));
-  for (const skill of graph.skills)
-    assert.ok(groups.has(skill.group), skill.label);
-  assert.match(html, /data-skills-graph/);
-  for (const skill of graph.skills) {
-    assert.ok(
-      html.includes(`<dt>${skill.label.replace(/&/g, "&amp;")}</dt>`),
-      skill.label,
-    );
+test("category routes round-trip and go up to Skills", () => {
+  const { categories } = getSkillStack();
+  for (const { id } of categories) {
+    const hash = skillsHash(id);
+    const scene = routeToScene(parseRoute(hash));
+    assert.equal(sceneToHash(scene), hash);
+    assert.equal(sceneToHash(parentScene(scene)), "#skills");
+    assert.equal(sameScene(scene, { scene: "skills" }), false);
+  }
+  for (const hash of ["#skills/", "#skills/nonsense", "#skills/ai/extra"]) {
+    assert.equal(parseRoute(hash).kind, "missing");
+  }
+});
+
+test("draft and missing notes go into the same bare evidence group", () => {
+  const project = graph.projects.find(({ id }) => id === "cya");
+  const draft = { project, text: "Draft note", draft: true };
+  const missing = { project };
+  const confirmed = { project, text: "Confirmed note" };
+  const practice = { project: practiceNode, text: practiceNode.note };
+  assert.deepEqual(groupSkillUses([draft, practice, confirmed, missing]), {
+    documented: [confirmed],
+    bare: [draft, missing],
+    practice,
+  });
+});
+
+test("static Skills HTML is a table: one row group per skill, practice last, single-project counts hidden", () => {
+  for (const { id, rows } of getSkillStack().categories) {
+    const hash = skillsHash(id);
+    assert.match(html, new RegExp(`href="${hash}"[^>]+aria-current="page"`));
+    const page = html.match(
+      new RegExp(
+        `<section class="skills-page" id="${hash.slice(1)}"[^>]*>(.*?)</section>`,
+        "s",
+      ),
+    )?.[1];
+    assert.ok(page, hash);
+    assert.match(page, /<table class="skills-table"><caption[^>]*>/);
+    const groups = page.split('<tbody class="skills-group">').slice(1);
+    assert.equal(groups.length, rows.length, hash);
+    for (const row of rows) {
+      const markup = groups.find((part) => part.includes(`id="use-${row.id}"`));
+      assert.ok(markup, row.label);
+      assert.match(markup, /^<tr class="skills-group-head"><th scope="rowgroup" colspan="2"/);
+      assert.equal(
+        markup.match(/<span class="skills-project-count">(.*?)<\/span>/)?.[1],
+        row.count > 1 ? `${row.count} projects` : undefined,
+        row.label,
+      );
+      const trs = markup.split("<tr").slice(2);
+      for (const use of row.uses) {
+        const tr = trs.find((t) => t.includes(`href="${use.project.href}"`));
+        assert.ok(tr, use.project.name);
+        if (use.project.kind === "practice") {
+          assert.equal(id, "languages");
+          assert.ok(["c", "python"].includes(row.id));
+          assert.match(tr, /class="is-practice">.*>Practice<.*<span class="skills-note">/s);
+          assert.equal(trs.at(-1), tr, "practice comes last");
+        } else if (use.text && !use.draft) {
+          assert.match(tr, /^><td>.*<\/a><\/td><td><span class="skills-note">/s);
+        } else {
+          assert.match(tr, /class="is-bare">/);
+          assert.doesNotMatch(tr, /skills-note/);
+        }
+        if (!use.project.external) {
+          assert.ok(
+            html.includes(`id="${use.project.href.slice(1)}"`),
+            use.project.href,
+          );
+        }
+      }
+    }
   }
 });

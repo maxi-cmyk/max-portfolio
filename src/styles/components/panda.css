@@ -1,0 +1,125 @@
+/* The panda (components/panda.js, data/panda.js). Its pixels keep their own
+   colours in every scope: inside the dark hero the tokens invert, and an
+   inverted panda would have white ears. On dark it gets a 1px light halo so its
+   ink outline still reads. */
+.px-panda .c-k {
+  fill: #1d1d1d;
+}
+.px-panda .c-p {
+  fill: #f4f3ed;
+}
+.px-panda .c-m {
+  fill: #7a2e5d;
+}
+.px-panda .c-n {
+  fill: #12376b;
+}
+.px-panda {
+  display: block;
+  image-rendering: pixelated;
+}
+
+/* In the hero: the seated panda at 2× (48px), with its line beside it so a hint
+   never moves the layout. */
+.intro-tools {
+  min-height: 48px;
+}
+.panda {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  line-height: 0;
+}
+.panda .px-panda {
+  width: 48px;
+  height: 48px;
+}
+.is-dark .panda .px-panda {
+  filter: drop-shadow(1px 0 0 #e6eeff) drop-shadow(-1px 0 0 #e6eeff)
+    drop-shadow(0 1px 0 #e6eeff) drop-shadow(0 -1px 0 #e6eeff);
+}
+.panda:focus-visible {
+  outline: 2px solid var(--acid);
+  outline-offset: 4px;
+}
+.intro-tools .mascot-hint {
+  align-self: center;
+  margin: 0;
+  color: var(--muted);
+  font: 500 var(--step--1) / 1.4 var(--font-code);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* In a window: a head peeking up over the right end of the title bar, its
+   chin hidden behind the bar's bottom edge. It rises in once the window has
+   opened. */
+html.is-scenes .scene > .titlebar:has(.panda-peek) {
+  padding-right: 56px;
+}
+.panda-peek {
+  position: absolute;
+  top: 0;
+  right: 8px;
+  bottom: 0;
+  display: flex;
+  align-items: flex-end;
+  width: 44px;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease-out;
+}
+.panda-peek-art {
+  display: block;
+  width: 32px;
+  height: 22px;
+  overflow: hidden;
+}
+.panda-peek .px-panda {
+  width: 32px;
+  height: 22px;
+  translate: 0 100%;
+  transition: translate 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.panda-peek.is-here {
+  opacity: 1;
+  pointer-events: auto;
+}
+.panda-peek.is-here .px-panda {
+  translate: none;
+}
+.panda-peek:focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: -2px;
+}
+/* What it says in a window: a paper note just under its corner of the bar. It
+   never takes a click, so it cannot cover a control. */
+.panda-say {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 8px;
+  z-index: 6;
+  max-width: min(280px, calc(100vw - 48px));
+  padding: 4px 10px;
+  border: var(--hair);
+  background: var(--panel);
+  box-shadow: 2px 2px 0 var(--ink);
+  color: var(--ink);
+  font: 500 var(--step--1) / 1.4 var(--font-code);
+  pointer-events: none;
+}
+.panda-say[hidden] {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .panda-peek,
+  .panda-peek .px-panda {
+    transition: none;
+  }
+}

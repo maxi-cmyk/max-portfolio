@@ -62,6 +62,6 @@ export function setSound(enabled) {
 export function soundFor(target) {
   if (target.closest?.(".light.red")) return "close";
   if (target.closest?.(".icon, .work-tile, .field-art-card")) return "open";
-  if (target.closest?.(".push, .chip, .hero-chip, .light")) return "tap";
+  if (target.closest?.(".push, .chip, .light")) return "tap";
   return null;
 }

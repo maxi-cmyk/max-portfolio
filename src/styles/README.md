@@ -18,9 +18,9 @@ additional browser requests.
 - `responsive-motion.css` — the existing cross-surface narrow-layout overrides
   and reduced-motion contract.
 - `components/subpage.css` — focus subpage shell and project cards.
-- `components/project-modal.css` — shared project dialog shell.
-- `components/case-studies.css` — project-specific case-study layouts and their
-  narrow-layout adaptations.
+- `components/case-map.css` — the case-study step map and step tables.
+- `components/contact-note.css` — the "Currently" sticky note in the Contact window.
+- `components/view-transitions.css` — screen-change motion: what travels between screens, and how the 3D canvas fades.
 - `effects/terminal-glitch.css` — the terminal sudo glitch effect.
 - `themes/retro-apple.css` — System 7 visual overrides; loaded after `main.css`
   by `index.html` so it remains the active theme.

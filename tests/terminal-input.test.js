@@ -133,7 +133,6 @@ test("primary compact controls provide 44px touch targets", () => {
   [
     ".suggestion-item",
     ".hero-prompt",
-    ".hero-chip",
     ".certificate-actions a",
     "footer a",
     ".work-filters button",

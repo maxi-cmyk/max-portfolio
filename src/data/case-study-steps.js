@@ -1,42 +1,64 @@
-// Turns each case-study layout into one list of short steps, so a scene or
-// stepper can walk through any project the same way.
-// A step is { title, body, code? }. Layouts: algorithm, lifecycle,
-// event-sequence, pipeline, frame-loop.
+// Turns each case-study layout into one list of steps, so the case scene and
+// the static page walk through any project the same way.
+// A step is { title, body, more?, code?, table? }: `more` holds further
+// paragraphs, and `table` is { caption, head, rows } with the first column as
+// row headers. Layouts: algorithm, lifecycle, event-sequence, pipeline,
+// frame-loop. Each layout's own shape also draws its map (components/case-map.js).
+
+const extras = ({ more, code, table }) => ({
+  ...(more?.length ? { more } : {}),
+  ...(code ? { code } : {}),
+  ...(table ? { table } : {}),
+});
 
 export function getCaseStudySteps(insights = {}) {
   switch (insights.layout) {
     case "algorithm":
-      return (insights.howItWorks?.steps ?? []).map(
-        ({ title, body, code }) => ({ title, body, ...(code ? { code } : {}) }),
-      );
+      return (insights.howItWorks?.steps ?? []).map((step) => ({
+        title: step.title,
+        body: step.body,
+        ...extras(step),
+      }));
     case "lifecycle":
-      return (insights.lifecycle?.steps ?? []).map(({ title, body }) => ({
-        title,
-        body,
+      return (insights.lifecycle?.steps ?? []).map((step) => ({
+        title: step.title,
+        body: step.body,
+        ...extras(step),
       }));
     case "event-sequence":
-      return (insights.eventSequence?.steps ?? []).map(
-        ({ actorLabel, title, body }) => ({
-          title,
-          body: actorLabel ? `${actorLabel}: ${body}` : body,
-        }),
-      );
+      return (insights.eventSequence?.steps ?? []).map((step) => ({
+        title: step.title,
+        body: step.actorLabel ? `${step.actorLabel}: ${step.body}` : step.body,
+        ...extras(step),
+      }));
     case "pipeline": {
       const { source, lanes = [], merge } = insights.pipeline ?? {};
       return [
-        ...(source ? [{ title: source.label, body: source.detail }] : []),
+        ...(source
+          ? [{ title: source.label, body: source.detail, ...extras(source) }]
+          : []),
         ...lanes.map((lane) => ({
           title: lane.label,
-          body: lane.steps.join(" → "),
+          // The lane's own steps are drawn in its map.
+          body: lane.detail ?? `${lane.steps.join(" → ")}.`,
+          ...extras(lane),
         })),
-        ...(merge ? [{ title: merge.label, body: merge.detail }] : []),
+        ...(merge
+          ? [{ title: merge.label, body: merge.detail, ...extras(merge) }]
+          : []),
       ];
     }
     case "frame-loop": {
       const { phases = [], after } = insights.frameLoop ?? {};
       return [
-        ...phases.map(({ label, detail }) => ({ title: label, body: detail })),
-        ...(after ? [{ title: after.label, body: after.detail }] : []),
+        ...phases.map((phase) => ({
+          title: phase.label,
+          body: phase.detail,
+          ...extras(phase),
+        })),
+        ...(after
+          ? [{ title: after.label, body: after.detail, ...extras(after) }]
+          : []),
       ];
     }
     default:
@@ -44,11 +66,17 @@ export function getCaseStudySteps(insights = {}) {
   }
 }
 
-// The stepper view: an overview first, then the layout's own steps.
+// The case study: an overview first, then the layout's own steps.
 export function getCaseStudyView(insights = {}) {
   return [
     ...(insights.summary
-      ? [{ title: "Overview", body: insights.summary }]
+      ? [
+          {
+            title: "Overview",
+            body: insights.summary,
+            ...extras(insights.overview ?? {}),
+          },
+        ]
       : []),
     ...getCaseStudySteps(insights),
   ];

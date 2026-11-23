@@ -23,8 +23,7 @@
 
 .project-card-meta {
   color: var(--muted);
-  font: var(--step--1) var(--font-mono);
-  letter-spacing: 0.03em;
+  font: var(--step--1) / 1.4 var(--font-text);
 }
 
 .project-card-desc {
@@ -42,14 +41,14 @@
   margin-bottom: 18px;
 }
 
-/* Tags are plain mono text; the rule under the card already groups them. */
+/* Tags are plain muted text, never link blue: they do nothing when tapped. */
 .tech-badge {
   display: inline-block;
   padding: 0;
   border: 0;
   background: none;
-  color: var(--acid);
-  font: var(--step--1) var(--font-mono);
+  color: var(--muted);
+  font: 400 var(--step--1) / 1.4 var(--font-text);
 }
 
 .tech-badge + .tech-badge::before {
@@ -64,6 +63,11 @@
   align-items: end;
   gap: 12px 24px;
   padding-top: 8px;
+}
+@media (max-width: 760px) {
+  .project-card-links {
+    grid-template-columns: 1fr;
+  }
 }
 
 .project-card-outbound-links {
@@ -85,4 +89,17 @@
 .modal-links .terminal-link {
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+/* One link voice in every window: the reading font, bold, link blue, underlined. */
+.project-card-outbound-links .terminal-link,
+.case-actions .terminal-link,
+.certificate-actions a,
+html.is-scenes #contact > div:not(.titlebar) a {
+  color: var(--acid);
+  font: 700 var(--step-1) / 1.3 var(--font-text);
+  letter-spacing: 0;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
 }

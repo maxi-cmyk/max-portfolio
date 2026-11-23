@@ -15,10 +15,6 @@ function createCertificateEntry(certificate) {
     `Open ${certificate.title} in a new tab`,
   );
 
-  const previewBar = document.createElement("span");
-  previewBar.className = "certificate-preview-bar";
-  previewBar.textContent = certificate.pdfUrl.split("/").pop();
-
   const previewImage = document.createElement("img");
   previewImage.src = certificate.previewUrl;
   previewImage.alt = certificate.previewAlt;
@@ -26,14 +22,19 @@ function createCertificateEntry(certificate) {
   previewImage.height = 1082;
   previewImage.loading = "lazy";
   previewImage.decoding = "async";
-  previewLink.append(previewBar, previewImage);
+  previewLink.append(previewImage);
 
   const details = document.createElement("div");
   details.className = "certificate-details";
 
-  const meta = document.createElement("p");
-  meta.className = "certificate-meta";
-  meta.textContent = `${certificate.issuer} · ${certificate.issued}`;
+  // A date stamp, then the title and who issued it.
+  const date = document.createElement("p");
+  date.className = "certificate-date";
+  date.textContent = certificate.issued;
+
+  const issuer = document.createElement("p");
+  issuer.className = "certificate-issuer";
+  issuer.textContent = certificate.issuer;
 
   const title = document.createElement("h3");
   title.textContent = certificate.title;
@@ -49,6 +50,7 @@ function createCertificateEntry(certificate) {
   viewLink.href = certificate.pdfUrl;
   viewLink.target = "_blank";
   viewLink.rel = "noreferrer";
+  viewLink.className = "pk-btn";
   viewLink.textContent = "Open certificate ↗";
 
   const downloadLink = document.createElement("a");
@@ -57,7 +59,7 @@ function createCertificateEntry(certificate) {
   downloadLink.textContent = "Download PDF ↓";
 
   actions.append(viewLink, downloadLink);
-  details.append(meta, title, summary, actions);
+  details.append(date, title, issuer, summary, actions);
   entry.append(previewLink, details);
   return entry;
 }
@@ -65,5 +67,13 @@ function createCertificateEntry(certificate) {
 export function initCertificates() {
   if (!certificateList) return;
 
-  certificateList.replaceChildren(...certificates.map(createCertificateEntry));
+  // Room on the board for the certificates still to come.
+  const next = document.createElement("p");
+  next.className = "certificate-next";
+  next.setAttribute("aria-hidden", "true");
+  next.textContent = "space for the next one";
+  certificateList.replaceChildren(
+    ...certificates.map(createCertificateEntry),
+    next,
+  );
 }

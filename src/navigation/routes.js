@@ -4,6 +4,7 @@ import {
   normalizeCategories,
   resolveCategory,
 } from "../data/projects.js";
+import { SKILL_CATEGORIES } from "../data/skill-stack.js";
 
 // A project can ride along with a filter: #work?categories=a,b&project=slug
 export function workHash(categories = [], slug = null) {
@@ -17,14 +18,24 @@ export function projectHash(slug, step) {
   return step ? `#project/${slug}/${step}` : `#project/${slug}`;
 }
 
+export function skillsHash(category) {
+  return category ? `#skills/${category}` : "#skills";
+}
+
 const SECTION_IDS = ["home", "terminal", "certificates", "contact", "skills"];
 const SECTION_ALIASES = { credentials: "certificates" };
 
 // Hashes: #home #terminal #work #work/<slug> #work?categories=a,b
-// #project/<slug> #project/<slug>/<step> #project/<slug>/read
+// #project/<slug> #project/<slug>/<step> (#project/<slug>/read opens step 1)
 // #skills #certificates (also #credentials) #contact
 // Retired category ids in #focus/... and ?categories= still resolve.
 export function parseRoute(hash = "") {
+  if (hash.startsWith("#skills/")) {
+    const category = hash.slice("#skills/".length);
+    return SKILL_CATEGORIES.some(({ id }) => id === category)
+      ? { kind: "section", id: "skills", category }
+      : { kind: "missing" };
+  }
   if (hash === "#focus" || hash === "#work" || hash.startsWith("#work?")) {
     const query = new URLSearchParams(hash.split("?")[1] || "");
     const raw = (query.get("categories") || "").split(",").filter(Boolean);
@@ -60,7 +71,10 @@ export function parseRoute(hash = "") {
       return { kind: "missing" };
     }
     if (step === undefined) return { kind: "project", slug };
-    if (step === "read") return { kind: "project", slug, read: true };
+    // The old full write-up now lives in the steps; its links open step 1.
+    if (step === "read") {
+      return { kind: "project", slug, hash: projectHash(slug) };
+    }
     if (/^[1-9]\d?$/.test(step)) {
       return { kind: "project", slug, step: Number(step) };
     }

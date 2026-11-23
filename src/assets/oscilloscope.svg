@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 156 94" focusable="false">
+  <rect class="desk-enclosure" x="9" y="10" width="138" height="70" rx="5" />
+  <rect class="scope-screen" x="17" y="18" width="101" height="52" rx="3" />
+  <path class="scope-grid" d="M26 35h83M26 52h83M47 25v38m21-38v38m21-38v38" />
+  <path class="scope-wave" d="M25 46h9c8 0 10-15 17-15s9 25 18 25 10-19 18-19 10 9 17 9h5" />
+  <path class="scope-sweep" d="M28 24v40" />
+  <circle class="desk-dial" cx="132" cy="32" r="7" />
+  <path class="desk-detail" d="m132 32 3-4m-8 22h10m-10 7h10m-114 23-2 5h13l2-5m77 0 2 5h13l-2-5" />
+  <circle class="desk-accent" cx="132" cy="66" r="2.5" />
+</svg>

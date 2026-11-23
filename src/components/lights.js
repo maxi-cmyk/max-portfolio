@@ -1,5 +1,6 @@
-// The three window buttons: red closes, yellow minimizes to the desktop icon,
-// green zooms. They are real buttons with names, never decoration.
+// The three square window buttons: red closes, amber (class "yellow") minimizes
+// to the desktop icon, green zooms. They are real buttons with names, never
+// decoration.
 export function createLights({ name, onClose, onMinimize, onZoom }) {
   const group = document.createElement("div");
   group.className = "lights";

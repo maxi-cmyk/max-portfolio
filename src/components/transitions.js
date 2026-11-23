@@ -2,6 +2,12 @@
 // only opacity and transform, so the browser can run it off the main thread.
 // The caller passes `apply`, which swaps the scene; it runs exactly once, even if
 // the transition is cancelled first. Reduced motion just calls `apply`.
+//
+// Where the browser has View Transitions, the old screen stays up as a picture
+// while the new one comes in, so nothing ever goes blank, and named elements
+// travel from their old box to their new one (view-transitions.css). `pairs`
+// names them: `old()` before the swap, `new()` after it. Elsewhere the WAAPI
+// motion below animates the new scene in.
 
 import { reduced } from "./reduced-motion.js";
 
@@ -14,7 +20,12 @@ export function createTransitions({
 } = {}) {
   let token = 0;
   let pending = null;
+  let current = null;
   const animations = new Set();
+  const root = () => document.documentElement;
+  const canMorph = () =>
+    typeof document !== "undefined" &&
+    typeof document.startViewTransition === "function";
 
   const ms = (n) => n * speed();
   const flush = () => {
@@ -42,8 +53,48 @@ export function createTransitions({
   // and apply any scene swap that has not happened.
   function cancel() {
     token += 1;
+    if (current) {
+      const { vt, names } = current;
+      current = null;
+      unname(names);
+      delete root().dataset.vt;
+      vt.skipTransition();
+    }
     cleanup();
     flush();
+  }
+
+  // Names are set only while a transition runs; each must be unique then.
+  const name = (pairs, names) => {
+    for (const [node, label] of pairs ?? []) {
+      if (!node || names.some(([n]) => n === node)) continue;
+      node.style.viewTransitionName = label;
+      names.push([node, label]);
+    }
+  };
+  const unname = (names) => {
+    for (const [node] of names.splice(0)) node.style.viewTransitionName = "";
+  };
+
+  async function morph(kind, { apply, pairs }) {
+    const names = [];
+    name(pairs?.old?.(), names);
+    root().dataset.vt = kind;
+    root().style.setProperty("--vt-speed", String(speed()));
+    const vt = document.startViewTransition(() => {
+      // A newer navigation skipped this one and has applied the swap already.
+      if (current?.vt !== vt) return;
+      unname(names);
+      flush();
+      name(pairs?.new?.(), names);
+    });
+    current = { vt, names };
+    await vt.finished.catch(() => {});
+    if (current?.vt === vt) {
+      current = null;
+      unname(names);
+      delete root().dataset.vt;
+    }
   }
 
   const swap = (apply) => {
@@ -133,6 +184,11 @@ export function createTransitions({
     }
     pending = options.apply;
     const t = token;
+    if (canMorph()) {
+      await morph(kind, options);
+      if (t === token) flush();
+      return;
+    }
     moving(true);
     if (kind === "open") await open(options);
     else if (kind === "close") await close(options);
@@ -147,6 +203,7 @@ export function createTransitions({
   return {
     run,
     cancel,
-    isRunning: () => pending !== null || animations.size > 0,
+    isRunning: () =>
+      pending !== null || animations.size > 0 || current !== null,
   };
 }

@@ -6,8 +6,6 @@ export function createProjectInsightsButton(project, context = "terminal") {
   button.dataset.project = project.slug;
   button.id = `case-study-${context}-${project.slug}`;
   button.className = "terminal-link project-insights-btn";
-  button.setAttribute("aria-haspopup", "dialog");
-  button.setAttribute("aria-controls", "project-modal");
   button.setAttribute("aria-label", `Open ${project.name} case study`);
 
   const label = document.createElement("span");

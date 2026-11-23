@@ -1,58 +1,41 @@
 /* Classic Mac controls: window buttons, push buttons, pop-up menus, the
    Finder-style status strip, scroll bars, and the terminal window. */
 
-/* ---------- Window buttons, in the site's own palette: plum closes, platinum
-   minimizes, navy zooms. The class names (red, yellow, green) are the roles'
-   old colours and are kept because scripts select on them. ---------- */
+/* ---------- Window buttons: three flat squares with an ink outline. Red closes,
+   amber (class "yellow") minimizes, green zooms. ---------- */
 .lights {
-  position: absolute;
-  top: 50%;
-  left: 10px;
-  z-index: 2;
   display: flex;
+  flex: none;
   gap: 8px;
-  transform: translateY(-50%);
 }
 .light {
   position: relative;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   padding: 0;
-  border: 1px solid rgba(0, 0, 0, 0.38);
-  border-radius: 50%;
-  background:
-    radial-gradient(
-      circle at 50% 26%,
-      rgba(255, 255, 255, var(--shine, 0.72)),
-      rgba(255, 255, 255, 0) 58%
-    ),
-    var(--c);
-  box-shadow:
-    inset 0 -2px 3px rgba(0, 0, 0, 0.28),
-    0 1px 0 rgba(255, 255, 255, 0.55);
+  border: var(--hair);
+  border-radius: 0;
+  background: var(--c);
   cursor: pointer;
 }
 @media (min-width: 900px) {
   .light {
-    width: 14px;
-    height: 14px;
+    width: 13px;
+    height: 13px;
   }
+  /* 13px buttons 11px apart: a 24px pitch, so each gets a full 24px target. */
   .lights {
-    gap: 7px;
+    gap: 11px;
   }
 }
 .light.red {
-  --c: #7a2e5d;
-  --glyph: #f4f3ed;
-  --shine: 0.34;
+  --c: #ee6a5e;
 }
 .light.yellow {
-  --c: #d6d5cd;
+  --c: #f5b945;
 }
 .light.green {
-  --c: #12376b;
-  --glyph: #f4f3ed;
-  --shine: 0.34;
+  --c: #5fc45a;
 }
 /* The × − + glyphs show when the pointer is anywhere on the group, as on a Mac,
    and always on a touch screen, where there is no pointer to hover with. */
@@ -61,15 +44,15 @@
   inset: 0;
   display: grid;
   place-items: center;
-  color: var(--glyph, rgba(0, 0, 0, 0.72));
-  font: 700 13px / 1 var(--font-text);
+  color: var(--ink);
+  font: 700 12px / 1 var(--font-text);
 }
-.lights:hover .red::before,
-.lights:focus-within .red::before {
+.lights:hover .red:not(.is-off)::before,
+.lights:focus-within .red:not(.is-off)::before {
   content: "×";
 }
-.lights:hover .yellow::before,
-.lights:focus-within .yellow::before {
+.lights:hover .yellow:not(.is-off)::before,
+.lights:focus-within .yellow:not(.is-off)::before {
   content: "−";
 }
 .lights:hover .green::before,
@@ -77,43 +60,40 @@
   content: "+";
 }
 @media (hover: none) {
-  .lights:not(.is-inactive) .red::before {
+  .lights:not(.is-inactive) .red:not(.is-off)::before {
     content: "×";
   }
-  .lights:not(.is-inactive) .yellow::before {
+  .lights:not(.is-inactive) .yellow:not(.is-off)::before {
     content: "−";
   }
   .lights:not(.is-inactive) .green::before {
     content: "+";
   }
 }
+/* A zoomed window's green button looks pressed in. */
 .light.green[aria-pressed="true"] {
-  box-shadow:
-    inset 0 2px 3px rgba(0, 0, 0, 0.35),
-    0 1px 0 rgba(255, 255, 255, 0.55);
+  box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.35);
 }
-/* The tap target is larger than the visible dot, but never wider than its pitch. */
+/* The tap target is larger than the visible square, at least 24px each way
+   (WCAG 2.5.8), but never wider than its pitch: 24 × 44 on touch screens,
+   24 × 25 on laptops. */
 button.light::after {
   position: absolute;
-  inset: -13px -4px;
+  inset: -14px -4px;
   content: "";
 }
 @media (min-width: 900px) {
   button.light::after {
-    inset: -7px -3px;
+    inset: -6px -5.5px;
   }
 }
 .light:focus-visible {
   outline: 2px solid var(--navy);
   outline-offset: 3px;
 }
-/* A window with nothing to close shows grey buttons, as an inactive one does. */
+/* A button with nothing to do keeps its colour but shows no glyph and no hand. */
 .lights.is-inactive .light,
 .light.is-off {
-  --c: #cfcec6;
-  border-color: rgba(0, 0, 0, 0.22);
-  background: var(--c);
-  box-shadow: none;
   cursor: default;
 }
 
@@ -129,10 +109,9 @@ button.light::after {
   box-shadow: 1px 1px 0 var(--ink);
   color: var(--ink);
   cursor: pointer;
-  font: 500 var(--step--1) / 1 var(--font-mono);
-  letter-spacing: 0.06em;
+  font: 500 var(--step-0) / 1 var(--font-mono);
+  letter-spacing: 0.02em;
   text-decoration: none;
-  text-transform: uppercase;
   transition:
     background-color 80ms steps(2, end),
     color 80ms steps(2, end);
@@ -186,11 +165,184 @@ button.light::after {
 .popup-grow select {
   width: 100%;
 }
+/* The pop-up menu (components/popup-menu.js) replaces the select once it loads:
+   a button showing the current value, and a paper menu that opens over it with
+   the chosen row where the button's text was. */
+.popup-field {
+  display: inline-grid;
+  min-width: 0;
+}
+.popup-grow .popup-field {
+  flex: 1;
+}
+.popup-field > * {
+  grid-area: 1 / 1;
+}
+.popup select.is-replaced {
+  visibility: hidden;
+  pointer-events: none;
+}
+.popup-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 11px 0 12px;
+  border: var(--hair);
+  border-radius: var(--button-radius);
+  background: var(--panel);
+  box-shadow: 1px 1px 0 var(--ink);
+  color: var(--ink);
+  cursor: pointer;
+  font: 500 var(--step--1) / 1 var(--font-mono);
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+.popup-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.popup-button svg {
+  flex: none;
+  width: 11px;
+  height: 15px;
+  fill: currentColor;
+}
+.popup-button:hover,
+.popup-button:focus-visible,
+.popup-button[aria-expanded="true"] {
+  border-color: var(--navy);
+  outline: 2px solid var(--navy);
+  outline-offset: 2px;
+}
+.popup-menu {
+  position: fixed;
+  z-index: 60;
+  box-sizing: border-box;
+  max-width: calc(100vw - 16px);
+  margin: 0;
+  padding: 4px 0;
+  overflow-y: auto;
+  border: var(--hair);
+  background: var(--panel);
+  box-shadow: 2px 2px 0 var(--ink);
+  color: var(--ink);
+  list-style: none;
+  overscroll-behavior: contain;
+}
+.popup-menu:focus {
+  outline: none;
+}
+.popup-menu [role="option"] {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 18px 0 30px;
+  cursor: pointer;
+  font: 400 var(--step-0) / 1 var(--font-chrome);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.popup-menu [aria-selected="true"]::before {
+  position: absolute;
+  left: 11px;
+  content: "✓";
+}
+.popup-menu .is-active {
+  background: var(--navy);
+  color: var(--panel);
+}
 .work-controls {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px 20px;
-  margin: 0 0 16px;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0 2px;
+  min-width: 0;
+  margin: 0 0 8px;
+}
+/* Each menu is as wide as what it shows; a long project name truncates. */
+.work-controls .popup {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.work-controls .popup:first-child {
+  flex-shrink: 0;
+}
+.work-controls .popup-field {
+  display: inline-flex;
+  min-width: 0;
+}
+.work-controls .popup select.is-replaced {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+/* Work's two menus read as one path, "All work / Asteroids": plain navy words
+   with a small arrow, no boxes. Their names stay for screen readers. */
+.work-controls .popup > span:not(.popup-field) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+.work-controls .popup + .popup::before {
+  margin: 0 6px 0 2px;
+  color: var(--muted);
+  content: "/";
+  font: 400 var(--step-1) / 1 var(--font-chrome);
+}
+.work-controls .popup select,
+.work-controls .popup-button {
+  min-height: 44px;
+  padding: 0 26px 0 6px;
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  background-position: right 8px center;
+  box-shadow: none;
+  max-width: 100%;
+  color: var(--navy);
+  font: 400 var(--step-1) / 1 var(--font-chrome);
+  letter-spacing: 0.02em;
+  text-decoration: underline dotted;
+  text-decoration-color: var(--muted);
+  text-underline-offset: 5px;
+}
+.work-controls .popup-button {
+  justify-content: flex-start;
+  gap: 8px;
+  padding-right: 8px;
+}
+@media (max-width: 699px) {
+  .work-controls .popup select,
+  .work-controls .popup-button,
+  .work-controls .popup + .popup::before {
+    font-size: var(--step-0);
+  }
+}
+.work-controls .popup-button svg {
+  width: 8px;
+  height: 11px;
+}
+.work-controls .popup select:hover,
+.work-controls .popup select:focus-visible,
+.work-controls .popup-button:hover,
+.work-controls .popup-button:focus-visible,
+.work-controls .popup-button[aria-expanded="true"] {
+  outline: none;
+  background-color: var(--bg);
+  text-decoration-color: currentColor;
+}
+.work-controls .popup-button:focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: 0;
 }
 html.is-scenes .work-filters {
   display: none;
@@ -311,25 +463,3 @@ html.is-scenes .scene.is-zoomed:not(#home) {
 
 /* ---------- The terminal as a vintage Mac text window ---------- */
 /* The default button of a Mac dialog wears a double ring. */
-
-/* On phones the two pop-up menus share one row; their names stay for screen readers. */
-@media (max-width: 700px) {
-  .work-controls {
-    flex-wrap: nowrap;
-    gap: 8px;
-  }
-  .work-controls .popup {
-    flex: 1;
-    min-width: 0;
-  }
-  .work-controls .popup > span {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-  }
-  .work-controls .popup select {
-    width: 100%;
-  }
-}

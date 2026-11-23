@@ -2,7 +2,7 @@
 // "up" goes, and a small state machine that stays correct when a new
 // navigation interrupts one still animating. No DOM in this file.
 import { allProjects } from "../data/projects.js";
-import { projectHash, workHash } from "./routes.js";
+import { projectHash, skillsHash, workHash } from "./routes.js";
 
 export const SCENES = [
   "hub",
@@ -36,12 +36,12 @@ export function routeToScene(route) {
         scene: "case",
         slug: route.slug,
         step: route.step ?? 1,
-        read: Boolean(route.read),
       };
     case "section":
       return {
         scene: SECTION_SCENES[route.id] ?? "hub",
         terminal: route.id === "terminal",
+        ...(route.category ? { category: route.category } : {}),
       };
     default:
       return { ...hubTarget(), missing: true };
@@ -53,13 +53,12 @@ export function sceneToHash(target) {
     case "work":
       return workHash(target.categories ?? [], target.slug);
     case "case":
-      if (target.read) return `${projectHash(target.slug)}/read`;
       return projectHash(
         target.slug,
         target.step > 1 ? target.step : undefined,
       );
     case "skills":
-      return "#skills";
+      return skillsHash(target.category);
     case "credentials":
       return "#certificates";
     case "contact":
@@ -69,18 +68,15 @@ export function sceneToHash(target) {
   }
 }
 
-// One step "up": reading view to its step view, a case study to its project, a
-// project to the Selected work landing, every other scene to the hub. Hub has
-// no parent.
+// One step "up": a case study to its project, a project to the Selected work
+// landing, every other scene to the hub. Hub has no parent.
 export function parentScene(target) {
   if (target.scene === "hub") return null;
+  if (target.scene === "skills" && target.category) return { scene: "skills" };
   if (target.scene === "work" && target.slug) {
     return { scene: "work", slug: null, categories: target.categories ?? [] };
   }
   if (target.scene === "case") {
-    if (target.read) {
-      return { scene: "case", slug: target.slug, step: target.step ?? 1 };
-    }
     const inPager = allProjects.some((p) => p.slug === target.slug);
     return {
       scene: "work",
@@ -94,6 +90,8 @@ export function parentScene(target) {
 // Same place on screen? (terminal and missing flags are not places.)
 export function sameScene(a, b) {
   if (a.scene !== b.scene) return false;
+  if (a.scene === "skills")
+    return (a.category ?? null) === (b.category ?? null);
   if (a.scene === "work") {
     return (
       (a.slug ?? null) === (b.slug ?? null) &&
@@ -103,8 +101,7 @@ export function sameScene(a, b) {
   if (a.scene === "case") {
     return (
       a.slug === b.slug &&
-      (a.step ?? 1) === (b.step ?? 1) &&
-      Boolean(a.read) === Boolean(b.read)
+      (a.step ?? 1) === (b.step ?? 1)
     );
   }
   return true;

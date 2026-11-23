@@ -1,0 +1,325 @@
+/* The case study's extra paragraphs, step tables and the drawn step map
+   (components/case-map.js). Pencil like the rest of the window: sketched
+   boxes on paper, the current step filled navy. */
+
+/* ---------- Paragraphs under a step's lead, on the note's 26px ruling ---------- */
+.case-note .case-body,
+.case-more p {
+  line-height: 26px;
+}
+#case .case-note {
+  /* Puts each line of text just above a rule (pencil.css sets the paper). */
+  background-position: 0 9px;
+}
+/* Without a figure beside it the column is the window's width; keep lines to
+   a readable length. */
+#case .case-note {
+  max-width: 46rem;
+}
+.case-more p {
+  margin: 26px 0 0;
+  font: var(--step-1) / 26px var(--font-text);
+}
+.case-more:empty {
+  display: none;
+}
+
+/* ---------- Step tables ---------- */
+.case-table {
+  position: relative;
+  max-width: 100%;
+  margin: 18px 0 2px;
+  overflow-x: auto;
+  background: var(--sheet);
+}
+.case-table::before {
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid var(--lead);
+  border-radius: 3px;
+  content: "";
+  filter: url(#pencil-rough);
+  pointer-events: none;
+}
+.case-table:focus-visible {
+  outline: 2px solid var(--acid);
+  outline-offset: 3px;
+}
+.case-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font: var(--step-0) / 1.4 var(--font-text);
+}
+.case-table caption {
+  padding: 10px 12px 2px;
+  color: var(--muted);
+  font: var(--step--1) / 1.4 var(--font-text);
+  text-align: left;
+}
+.case-table th,
+.case-table td {
+  padding: 7px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+.case-table thead th {
+  color: var(--warm);
+  font: 400 var(--step-0) / 1.2 var(--font-chrome);
+}
+.case-table tbody tr + tr > * {
+  border-top: 1px dashed #34332f55;
+}
+.case-table tbody th {
+  color: var(--navy);
+  font-weight: 700;
+}
+.case-table td {
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 699px) {
+  .case-table th,
+  .case-table td {
+    padding: 6px 9px;
+  }
+  /* The row names stay put while a wide table scrolls. */
+  .case-table tbody th {
+    position: sticky;
+    left: 0;
+    background: var(--sheet);
+  }
+}
+
+/* ---------- The step map ---------- */
+#case-map:empty {
+  display: none;
+}
+.case-map {
+  margin: 18px 0 10px;
+}
+.case-map figcaption {
+  margin-top: 10px;
+  color: var(--muted);
+  font: var(--step--1) / 1.4 var(--font-text);
+}
+.case-map ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.case-map-chain {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 26px;
+}
+.case-map-node {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 7px 11px 7px 10px;
+  border-radius: 4px;
+  background: var(--sheet);
+  color: var(--ink);
+  font: var(--step-0) / 1.25 var(--font-text);
+}
+.case-map-node::before {
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid var(--lead);
+  border-radius: inherit;
+  content: "";
+  filter: url(#pencil-rough);
+  pointer-events: none;
+}
+/* A pencil arrow to the next box. */
+.case-map-chain > li:not(:last-child)::after {
+  position: absolute;
+  top: 50%;
+  right: -21px;
+  color: var(--lead);
+  content: "→";
+  font: 400 var(--step-1) / 1 var(--font-text);
+  translate: 0 -50%;
+}
+.case-map-node b {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font: 400 var(--step-0) / 1.2 var(--font-chrome);
+}
+.case-map-node > span {
+  color: var(--muted);
+  font-size: var(--step--1);
+}
+.case-map-node small {
+  color: var(--warm);
+  font: var(--step--1) / 1.3 var(--font-text);
+}
+.case-map-n {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1.3px solid currentColor;
+  border-radius: 50%;
+  font: 400 11px / 1 var(--font-chrome);
+}
+.case-map .is-current {
+  background: var(--navy);
+  color: var(--sheet);
+}
+.case-map .is-current > span,
+.case-map .is-current small,
+.case-map .is-current .case-map-n {
+  color: var(--sheet);
+}
+.case-map-node.is-gate::before {
+  border-style: dashed;
+  border-color: var(--warm);
+}
+
+/* Algorithm flow: label over detail. */
+.case-map--flow .case-map-node {
+  flex: 1 1 120px;
+}
+
+/* Pipeline: one source, two lanes side by side, one merge, top to bottom. */
+.case-map--pipeline .case-map-chain {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 24px;
+}
+.case-map--pipeline .case-map-chain > li:not(:last-child)::after {
+  top: auto;
+  right: auto;
+  bottom: -22px;
+  left: 50%;
+  content: "↓";
+  translate: -50% 0;
+}
+.case-map--pipeline .case-map-chain > .case-map-node {
+  justify-self: center;
+  width: fit-content;
+  margin-inline: auto;
+}
+.case-map-split {
+  position: relative;
+}
+.case-map-lanes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.case-map-lane {
+  position: relative;
+  padding: 8px 10px 9px;
+  border-radius: 4px;
+  background: var(--hatch), var(--sheet);
+}
+.case-map-lane::before {
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid var(--lead);
+  border-radius: inherit;
+  content: "";
+  filter: url(#pencil-rough);
+  pointer-events: none;
+}
+.case-map-lane.is-current {
+  background: var(--navy);
+}
+.case-map-lane b {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+  font: 400 var(--step-0) / 1.2 var(--font-chrome);
+}
+.case-map-lane li {
+  padding: 3px 6px;
+  background: var(--sheet);
+  color: var(--ink);
+  font: var(--step--1) / 1.35 var(--font-text);
+}
+.case-map-lane li + li {
+  margin-top: 4px;
+}
+
+/* Frame loop: the phases repeat every frame; the score tables come after. */
+.case-map-tick {
+  margin: 0 0 8px;
+  color: var(--warm);
+  font: 400 var(--step-0) / 1.2 var(--font-chrome);
+}
+.case-map-ring > li:last-child::after {
+  position: absolute;
+  top: 50%;
+  right: -21px;
+  color: var(--warm);
+  content: "↺";
+  font: 400 var(--step-1) / 1 var(--font-text);
+  translate: 0 -50%;
+}
+.case-map-node.is-core::before {
+  border-color: var(--warm);
+  border-width: 2.2px;
+}
+.case-map-after {
+  margin-top: 14px !important;
+}
+.case-map-after .case-map-node::before {
+  border-style: dashed;
+}
+
+/* Two devices: one lane each, one event per row. */
+.case-map-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--lanes), minmax(0, 1fr));
+  gap: 6px 10px;
+}
+.case-map-heads {
+  display: contents;
+}
+.case-map-heads span {
+  padding-bottom: 4px;
+  border-bottom: 1.5px solid var(--lead);
+  color: var(--warm);
+  font: 400 var(--step-0) / 1.2 var(--font-chrome);
+}
+.case-map--lanes .case-map-chain {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  gap: 6px 10px;
+}
+.case-map--lanes .case-map-chain > li:not(:last-child)::after {
+  content: none;
+}
+.case-map--lanes small {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@media (max-width: 699px) {
+  /* Rows wrap on a phone, so the numbers carry the order instead of arrows
+     that would point off the end of a row. */
+  .case-map-chain {
+    gap: 10px;
+  }
+  .case-map:not(.case-map--pipeline) .case-map-chain > li::after {
+    content: none !important;
+  }
+  .case-map-node b {
+    font-size: var(--step--1);
+  }
+  .case-map--lanes .case-map-node {
+    padding: 6px 7px;
+    font-size: var(--step--1);
+  }
+}

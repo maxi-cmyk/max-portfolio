@@ -1,23 +1,28 @@
+import { contactNote, zoneOffset } from "../src/data/contact-note.js";
 import { readFileSync, writeFileSync } from "node:fs";
 import {
   allProjects,
   caseStudyProjects,
-  featuredProject,
   focusCategories,
   categoryLabel,
   isWip,
 } from "../src/data/projects.js";
-import { getSkillGraph } from "../src/data/skills.js";
+import { getSkillStack, groupSkillUses } from "../src/data/skill-stack.js";
 import {
-  desktopIcons,
-  renderCard,
-  renderIcon,
-  renderMac,
-} from "../src/data/icons.js";
+  GROUP_DOODLE,
+  PENCIL_FILTERS,
+  PROJECT_DOODLE,
+  doodle,
+} from "../src/data/doodles.js";
+import { desktopIcons, renderIcon, renderMac } from "../src/data/icons.js";
 import { buildVCard } from "../src/data/vcard.js";
 import { figureFor } from "../src/data/figures.js";
 import { renderDatasheet } from "../src/data/datasheets.js";
 import { certificates } from "../src/data/certificates.js";
+import { getCaseStudyView } from "../src/data/case-study-steps.js";
+import { renderCaseMap, renderStepTable } from "../src/components/case-map.js";
+import { renderPanda } from "../src/data/panda.js";
+import { projectHash, skillsHash } from "../src/navigation/routes.js";
 
 const escape = (value) =>
   String(value).replace(
@@ -27,8 +32,22 @@ const escape = (value) =>
         c
       ],
   );
-const link = (p, context) =>
-  `<a class="terminal-link project-insights-btn" id="case-study-${context}-${p.slug}" href="#project/${p.slug}" data-project="${p.slug}" aria-label="Open ${escape(p.name)} case study" aria-haspopup="dialog" aria-controls="project-modal">View case study <span aria-hidden="true">↗</span></a>`;
+// The way into a case study: a panel right under the hook that names every step
+// (each a link to that step) and ends in one filled button. Without JavaScript
+// the routes do not exist, so the panel is hidden and the card's own
+// "Read case study" details stand in.
+function caseStrip(p) {
+  const steps = getCaseStudyView(p.insights);
+  if (!steps.length) return "";
+  const id = `case-strip-${p.slug}`;
+  const items = steps
+    .map(
+      (s, i) =>
+        `<li><a href="${projectHash(p.slug, i ? i + 1 : undefined)}"><span class="case-strip-n" aria-hidden="true">${i + 1}</span> ${escape(s.title)}</a></li>`,
+    )
+    .join("");
+  return `<section class="case-strip" aria-labelledby="${id}"><h4 class="case-strip-label" id="${id}">Case study <span>· ${steps.length} steps</span></h4><ol class="case-strip-steps">${items}</ol><a class="push case-strip-open project-insights-btn" id="case-study-work-${p.slug}" href="${projectHash(p.slug)}" data-project="${p.slug}" aria-label="Open the ${escape(p.name)} case study">Open case study <span aria-hidden="true">→</span></a></section>`;
+}
 // A fact row, a photo frame or an email line with nothing real behind it is left
 // out of the page rather than shown as a placeholder. `npm run wip` still lists
 // every gap, because it reads the data, not the page.
@@ -75,91 +94,213 @@ function cards() {
       (
         p,
       ) => `<article class="full-project-card" data-project-slug="${p.slug}" data-categories="${p.categories.join(" ")}" id="project/${p.slug}">
-    <header class="project-card-header"><h3 class="project-card-title">${escape(p.name)}</h3><span class="project-card-meta">${escape(p.meta)}</span></header>
-    <p class="project-categories">${groups(p)}</p>
+    <header class="project-card-header" id="work/${p.slug}"><h3 class="project-card-title" tabindex="-1">${escape(p.name)}</h3><p class="project-card-meta"><span class="project-categories">${groups(p)}</span> · ${escape(p.meta)}</p></header>
     <p class="project-card-desc">${escape(p.hook)}</p>
-    ${media(p)}
+    ${caseStrip(p)}
     ${facts(p)}
-    ${renderDatasheet(p.name, p.slug)}
-    <div class="project-card-tags" aria-label="Technologies">${p.tags.map((t) => `<span class="tech-badge">${escape(t)}</span>`).join("")}</div>
-    <div class="project-card-links"><div class="project-card-outbound-links">${outbound(p)}</div>${link(p, "work")}</div>
-    <details class="static-case-study"><summary>Read case study</summary><p>${escape(p.insights.summary)}</p>${p.insights.sections.map((s) => `<h4>${escape(s.title)}</h4><p>${escape(s.body)}</p>`).join("")}</details>
+    <div class="project-card-links"><div class="project-card-outbound-links">${outbound(p)}</div></div>
+    ${figureFor(p.slug) ? `<template data-figure-fallback><div class="figure-fallback">${doodle(PROJECT_DOODLE[p.slug])}</div></template>` : ""}
+    ${media(p)}
+    <details class="project-specs"><summary>Technical details</summary>
+      ${renderDatasheet(p.name, p.slug)}
+      <div class="project-card-tags" aria-label="Technologies">${p.tags.map((t) => `<span class="tech-badge">${escape(t)}</span>`).join("")}</div>
+    </details>
+    <details class="static-case-study"><summary>Read case study</summary>${staticSteps(p)}</details>
   </article>`,
     )
     .join("\n");
 }
-function skillsBlock() {
-  const graph = getSkillGraph();
-  const byId = new Map(graph.projects.map((p) => [p.id, p]));
-  const index = graph.skills
+// The case study without JavaScript: the same steps the case scene pages
+// through, with the project's map under the overview.
+function staticSteps(p) {
+  return getCaseStudyView(p.insights)
     .map(
-      (s) =>
-        `<div><dt>${escape(s.label)}</dt><dd>${s.projects
-          .map((id) => {
-            const p = byId.get(id);
-            return `<a href="${escape(p.href)}"${p.external ? ' target="_blank" rel="noreferrer"' : ""}>${escape(p.name)}</a>`;
-          })
-          .join(", ")}</dd></div>`,
+      (s, i) =>
+        `<h4>${i + 1}. ${escape(s.title)}</h4><p>${escape(s.body)}</p>${(s.more ?? []).map((m) => `<p>${escape(m)}</p>`).join("")}${s.code ? `<pre class="case-code"><code>${escape(s.code)}</code></pre>` : ""}${renderStepTable(s.table)}${i === 0 ? renderCaseMap(p.insights, 0) : ""}`,
     )
     .join("");
-  return `<section id="skills" class="skills" aria-labelledby="skills-title"><div class="section-heading"><div><h2 id="skills-title">Skills</h2><p>Every skill links to the projects that use it. Pick a skill to see them, or a project to see its skills.</p></div></div><div class="skills-graph" data-skills-graph><dl class="skill-index">${index}</dl></div></section>`;
 }
+// Skills pages share one evidence model and native links, including the static view.
+function skillsBlock() {
+  const { categories, headlines } = getSkillStack();
+  const plural = (n, noun) => `${n} ${noun}${n === 1 ? "" : "s"}`;
+  const count = (category) =>
+    `${plural(category.rows.length, category.id === "concepts" ? "concept" : "skill")} · ${plural(category.projectCount, "project")}`;
+  const cards = headlines
+    .map(
+      (h) =>
+        `<li class="stack-card"><b>${h.count} <small>${h.count === 1 ? "project" : "projects"}</small></b><span>${escape(h.text)}</span></li>`,
+    )
+    .join("");
+  const tiles = categories
+    .map((category) => {
+      const preview = category.rows
+        .slice(0, 5)
+        .map(
+          (row) =>
+            `<li>${escape(row.label)}${row.count > 1 ? ` <small>×${row.count}</small>` : ""}</li>`,
+        )
+        .join("");
+      const more = (limit) =>
+        category.rows.length > limit
+          ? `<li class="skills-more skills-more-${limit}">+${category.rows.length - limit} more</li>`
+          : "";
+      return `<li><a class="skills-tile${category.focus ? " is-focus" : ""}" href="${skillsHash(category.id)}" aria-labelledby="skill-tile-${category.id}"><span class="skills-tile-title" id="skill-tile-${category.id}">${doodle(category.doodle)}${escape(category.label)}</span><span class="skills-count">${count(category)}</span><ul class="skills-preview">${preview}${more(4)}${more(5)}</ul><span class="skills-open">Open →</span></a></li>`;
+    })
+    .join("");
+  const projectLink = ({ project }) => {
+    const out = project.external ? ' target="_blank" rel="noreferrer"' : "";
+    return `<a href="${escape(project.href)}"${out}>${escape(project.name)}${project.external ? " ↗" : ""}</a>`;
+  };
+  const evidenceNote = ({ text }) =>
+    `<span class="skills-note">${escape(text)}</span>`;
+  // One table per category: each skill is a row group with a shaded header
+  // band, then one row per project. Projects whose note is still a draft get a
+  // row with an empty note cell; practice comes last, labelled.
+  const skillGroup = (row) => {
+    const { documented, bare, practice } = groupSkillUses(row.uses);
+    const countLabel =
+      row.count > 1
+        ? `<span class="skills-project-count">${plural(row.count, "project")}</span>`
+        : "";
+    const head = `<tr class="skills-group-head"><th scope="rowgroup" colspan="2" id="use-${row.id}"><span class="skills-skill">${escape(row.label)}</span>${countLabel}</th></tr>`;
+    const uses = [
+      ...documented.map(
+        (use) =>
+          `<tr><td>${projectLink(use)}</td><td>${evidenceNote(use)}</td></tr>`,
+      ),
+      ...bare.map(
+        (use) =>
+          `<tr class="is-bare"><td>${projectLink(use)}</td><td><span class="skills-pending" aria-hidden="true">–</span></td></tr>`,
+      ),
+      ...(practice
+        ? [
+            `<tr class="is-practice"><td><span class="skills-evidence-label">Practice</span> ${projectLink(practice)}</td><td>${evidenceNote(practice)}</td></tr>`,
+          ]
+        : []),
+    ].join("");
+    return `<tbody class="skills-group">${head}${uses}</tbody>`;
+  };
+  const pages = categories
+    .map((category) => {
+      const title = `skills-title-${category.id}`;
+      const tabs = categories
+        .map(
+          (tab) =>
+            `<a href="${skillsHash(tab.id)}" aria-label="${escape(tab.label)}"${tab.id === category.id ? ' aria-current="page"' : ""}><span>${escape(tab.label)}</span>${tab.short ? `<span class="skills-tab-short">${escape(tab.short)}</span>` : ""}</a>`,
+        )
+        .join("");
+      const table = `<table class="skills-table"><caption class="visually-hidden">${escape(category.label)}: each skill, the projects that used it and what it did there</caption><thead><tr><th scope="col">Project</th><th scope="col">What it did there</th></tr></thead>${category.rows.map(skillGroup).join("")}</table>`;
+      return `<section class="skills-page" id="${skillsHash(category.id).slice(1)}" data-skill-page="${category.id}" aria-labelledby="${title}"><p class="skills-crumb"><a href="#skills"><span aria-hidden="true">‹</span> Skills</a></p><div class="skills-book"><nav class="skills-tabs" aria-label="Skill categories">${tabs}</nav><div class="skills-paper"><header class="skills-page-heading">${doodle(category.doodle)}<div><h2 id="${title}" tabindex="-1">${escape(category.label)}</h2><p class="skills-count">${count(category)}</p></div></header>${table}</div></div></section>`;
+    })
+    .join("");
+  return `<section id="skills" class="skills" aria-labelledby="skills-title"><div data-skills-landing><div class="section-heading"><div><h2 id="skills-title" tabindex="-1">Skills</h2><p>Open a category to see how each skill was used.</p></div></div><ul class="stack-cards" aria-label="Skills highlights">${cards}</ul><ul class="skills-tiles" aria-label="Skill categories">${tiles}</ul></div>${pages}</section>`;
+}
+function desk(objects) {
+  const art = objects
+    .map(([name, file, href, label]) => {
+      const svg = readFileSync(
+        new URL(`../src/assets/${file}.svg`, import.meta.url),
+        "utf8",
+      ).trim();
+      return `<a class="field-art-card ${name}-art" href="${href}" aria-label="${escape(label)}"><span class="desk-object" aria-hidden="true">${svg}</span></a>`;
+    })
+    .join("\n");
+  return `<template id="desk-artwork"><div class="field-trio desk-artwork">${art}</div></template>`;
+}
+
 function desktop() {
   const item = (i) => {
     const inner = `${renderIcon(i.icon)}<span class="icon-label">${escape(i.label)}</span>`;
     const download = i.download ? ` download="${escape(i.download)}"` : "";
     return `<a class="icon" data-icon="${i.key}" href="${escape(i.href)}"${download}>${inner}</a>`;
   };
-  return `<nav class="desktop-icons" aria-label="Sections">${desktopIcons.map(item).join("")}</nav>`;
+  return [
+    `<nav class="desktop-icons" aria-label="Sections">${desktopIcons.map(item).join("")}</nav>`,
+    // Left to right along the desk's edge, so reading order matches the row.
+    desk([
+      ["scope", "oscilloscope", "#work/music-leds", "music_LEDs"],
+      [
+        "cyber",
+        "network-nodes",
+        "#work/timing-attack-lab",
+        "timing-attack-lab",
+      ],
+      ["esp32", "esp32", "#work/music-leds", "music_LEDs"],
+      [
+        "matrix",
+        "led-matrix",
+        "#work/conway-game-of-life",
+        "Conway's Game of Life",
+      ],
+      ["cassette", "echo-cassette", "#work/echo", "Echo"],
+      ["asteroids", "asteroids-display", "#work/asteroids", "Asteroids"],
+      ["camera", "camera-board", "#project/sentinel", "Sentinel"],
+    ]),
+  ].join("\n");
 }
 // The Selected work landing: every project as a tile, grouped. JavaScript shows
 // it; without JavaScript the full cards below are the page.
-// Small vector drawings for the tiles whose project has no 3D figure yet.
-const THUMB_ART = {
-  asteroids:
-    '<svg viewBox="0 0 120 72" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M18 20l10-9 14 3 7 12-6 12-16 4-12-9z"/><path d="M84 16l12-6 14 6 3 14-10 10-16-2-8-12z"/><path d="M52 52l8-6 10 3 3 9-6 7-12-2z"/><path d="M60 70l-6-12 6 3 6-3z" stroke="var(--warm)"/><path d="M60 56V34" stroke="var(--warm)" stroke-dasharray="2 5"/></g></svg>',
-  itspeak:
-    '<svg viewBox="0 0 120 72" aria-hidden="true" focusable="false"><g fill="currentColor">' +
-    [10, 22, 34, 18, 44, 52, 30, 46, 24, 38, 14, 26, 8]
-      .map(
-        (h, i) =>
-          `<rect x="${8 + i * 8.6}" y="${36 - h / 2}" width="5" height="${h}"/>`,
-      )
-      .join("") +
-    '</g><path d="M4 36h112" stroke="var(--warm)" stroke-width="1"/></svg>',
-  echo: '<svg viewBox="0 0 120 72" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="60" cy="36" r="6"/><circle cx="60" cy="36" r="16" stroke-opacity=".75"/><circle cx="60" cy="36" r="27" stroke-opacity=".5"/><circle cx="60" cy="36" r="40" stroke-opacity=".28"/></g><circle cx="60" cy="36" r="3" fill="var(--warm)"/></svg>',
-};
-const tileScreen = (p) => {
-  const fig = figureFor(p.slug);
-  const inner = fig
-    ? `<span class="figure-host" data-figure="${fig.id}" data-thumb aria-hidden="true"></span>`
-    : (THUMB_ART[p.slug] ?? "");
-  return `<span class="tile-screen is-dark" aria-hidden="true">${inner}</span>`;
-};
+// Each card opens with a pencil doodle of its project, on hatched paper.
+const tileScreen = (p) =>
+  `<span class="tile-screen" aria-hidden="true">${doodle(PROJECT_DOODLE[p.slug] ?? "page")}</span>`;
 const tile = (p) =>
-  `<li><a class="work-tile" href="#work/${p.slug}">${tileScreen(p)}<span class="tile-name">${escape(p.name)}</span><span class="tile-meta">${escape(p.meta)}</span><span class="tile-hook">${escape(p.hook)}</span><span class="tile-badges">${figureFor(p.slug) ? '<span class="tile-badge">3D figure</span>' : ""}${caseStudyProjects.some((c) => c.slug === p.slug) ? '<span class="tile-badge">Case study</span>' : ""}</span></a></li>`;
+  `<li data-tile-slug="${p.slug}" data-primary-group="${p.categories[0]}"><a class="work-tile" href="#work/${p.slug}">${tileScreen(p)}<span class="tile-name">${escape(p.name)}</span><span class="tile-meta">${escape(p.meta)}</span><span class="tile-hook">${escape(p.hook)}</span><span class="tile-badges">${figureFor(p.slug) ? '<span class="tile-badge">3D figure</span>' : ""}${caseStudyProjects.some((c) => c.slug === p.slug) ? `<span class="tile-badge">${getCaseStudyView(p.insights).length}-step case study</span>` : ""}</span></a></li>`;
 const landing = () =>
   `<div id="work-landing" class="work-landing" hidden>${Object.values(
     focusCategories,
   )
     .map(
       (c) =>
-        `<section class="work-group" data-group="${c.id}" aria-labelledby="wg-${c.id}"><h3 id="wg-${c.id}">${escape(c.label)}</h3><p>${escape(c.description)}</p><ul class="work-tiles">${allProjects
+        `<section class="work-group" data-group="${c.id}" aria-labelledby="wg-${c.id}"><h3 id="wg-${c.id}">${doodle(GROUP_DOODLE[c.id])}${escape(c.label)}</h3><p>${escape(c.description)}</p><ul class="work-tiles">${allProjects
           .filter((p) => p.categories.includes(c.id))
           .map(tile)
           .join("")}</ul></section>`,
     )
     .join("")}</div>`;
-const cardArt = `<div class="figure-fallback">${renderCard()}</div>`;
+const additionalStaticCaseStudies = () =>
+  caseStudyProjects
+    .filter((project) => !allProjects.includes(project))
+    .map(
+      (p) =>
+        `<article class="full-project-card" id="project/${p.slug}"><h3>${escape(p.name)}</h3>${staticSteps(p)}<p>${outbound(p)}</p></article>`,
+    )
+    .join("");
+const transformSketch = `<template id="case-transform-sketch"><svg viewBox="0 0 240 108" aria-hidden="true" focusable="false"><g id="case-sketch-image"><rect x="13" y="14" width="74" height="74" rx="4"/><circle cx="37" cy="35" r="6"/><path d="m24 75 18-24 11 14 11-11 14 19"/></g><path d="M100 51h39m-12-10 12 10-12 11"/><use href="#case-sketch-image" x="139"/></svg><p>JPEG · blur · resize</p></template>`;
 const contactCard = `<a class="push" href="data:text/vcard;charset=utf-8,${encodeURIComponent(buildVCard())}" download="Max_Leong.vcf">Save contact card (.vcf)</a>`;
-const featured = `<a href="#work/${featuredProject.slug}"><span class="hero-featured-tag">Start here</span> <span class="hero-featured-name">${escape(featuredProject.name)}</span> <span class="hero-featured-meta">${escape(featuredProject.meta)}</span></a>`;
+// The "currently" sticky note. WIP lines are left out; the clock line shows the
+// place and UTC offset until the script fills in the live time.
+const contactNoteBlock = () => {
+  const n = contactNote;
+  const offset = zoneOffset(new Date(), n.timeZone) / 60;
+  const utc = `UTC${offset < 0 ? "−" : "+"}${Math.abs(offset)}`;
+  const main = (l) =>
+    l.href
+      ? `<a class="note-main" href="${escape(l.href)}">${escape(l.main)}</a>`
+      : `<span class="note-main">${escape(l.main)}</span>`;
+  const detail = (text, attr = "") =>
+    text ? `<span class="note-detail"${attr}>${escape(text)}</span>` : "";
+  const line = (l) =>
+    isWip(l.main)
+      ? ""
+      : `<div><dt>${escape(l.label)}</dt><dd>${main(l)}${detail(l.detail)}</dd></div>`;
+  // Until the script runs, the place is the main value and the UTC offset the
+  // detail; then it shows the live time, with the place and the difference.
+  const clock = `<div class="note-time"><dt>Local time</dt><dd><span class="note-main note-clock" data-local-time data-tz="${escape(n.timeZone)}" data-place="${escape(n.place)}">${escape(n.place)}</span>${detail(utc, " data-local-detail")}</dd></div>`;
+  const updated = new Date(`${n.updated}T00:00:00Z`).toLocaleDateString(
+    "en-GB",
+    { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" },
+  );
+  return `<aside class="contact-note" aria-labelledby="contact-note-title"><h3 id="contact-note-title">Currently</h3><dl>${n.lines.map(line).join("")}${clock}</dl><p class="contact-note-updated">Updated <time datetime="${escape(n.updated)}">${updated}</time></p></aside>`;
+};
 const blocks = {
-  featured,
-  cardcontact: cardArt,
   contactcard: contactCard,
+  contactnote: contactNoteBlock(),
   mac: `<figure class="mac-art is-paper" aria-hidden="true">${renderMac()}</figure>`,
+  // The panda's idle pose, drawn into the page so it shows before any script.
+  panda: renderPanda("idle", { size: "body" }),
   desktop: desktop(),
-  work: `<section id="work" class="work" aria-labelledby="work-title"><div class="section-heading"><div><h2 id="work-title" tabindex="-1">Selected work</h2><p>One collection. Explore the connections between disciplines.</p></div></div>
+  work: `<section id="work" class="work" aria-labelledby="work-title"><div class="section-heading"><div><h2 id="work-title" tabindex="-1">Selected work</h2><p><span data-work-summary>${allProjects.length} projects in ${Object.keys(focusCategories).length} groups.</span> <em>Pick a card</em> to open it.</p></div></div>
     ${landing()}
     <div id="work-filters" class="work-filters" role="group" aria-label="Filter projects by category" hidden><button type="button" data-work-filter="" aria-pressed="true">All work</button>${Object.keys(
       focusCategories,
@@ -171,14 +312,21 @@ const blocks = {
       .join("")}</div>
     <p id="work-count" class="work-count" role="status" aria-live="polite" aria-atomic="true">${allProjects.length} projects</p>
     <div id="work-projects" class="work-projects">${cards()}</div>
+    <noscript>${additionalStaticCaseStudies()}</noscript>
+    ${transformSketch}
   </section>`,
   skills: skillsBlock(),
-  certificates: certificates
-    .map(
-      (c) =>
-        `<article class="certificate-entry"><a class="certificate-preview" href="${escape(c.pdfUrl)}"><img src="${escape(c.previewUrl)}" alt="${escape(c.previewAlt)}" width="1400" height="1082" loading="lazy" decoding="async"></a><div class="certificate-details"><p>${escape(c.issuer)} · ${escape(c.issued)}</p><h3>${escape(c.title)}</h3><p>${escape(c.summary)}</p><a href="${escape(c.pdfUrl)}">Open certificate PDF ↗</a></div></article>`,
-    )
-    .join(""),
+  certificates:
+    certificates
+      .map(
+        (c) =>
+          `<article class="certificate-entry"><a class="certificate-preview" href="${escape(c.pdfUrl)}"><img src="${escape(c.previewUrl)}" alt="${escape(c.previewAlt)}" width="1400" height="1082" loading="lazy" decoding="async"></a><div class="certificate-details"><p class="certificate-date">${escape(c.issued)}</p><h3>${escape(c.title)}</h3><p class="certificate-issuer">${escape(c.issuer)}</p><p>${escape(c.summary)}</p><a class="pk-btn" href="${escape(c.pdfUrl)}">Open certificate PDF ↗</a></div></article>`,
+      )
+      .join("") +
+    // Room on the board for the certificates still to come.
+    '<p class="certificate-next" aria-hidden="true">space for the next one</p>',
+  // The pencil filters, once, at the top of the page.
+  pencil: PENCIL_FILTERS,
 };
 export function generateContent(html) {
   for (const [name, content] of Object.entries(blocks)) {
@@ -189,7 +337,11 @@ export function generateContent(html) {
     if (a === -1 || b === -1)
       throw new Error(`Missing generated content markers: ${name}`);
     html =
-      html.slice(0, a + start.length) + "\n" + content + "\n" + html.slice(b);
+      html.slice(0, a + start.length) +
+      "\n" +
+      content.replace(/[ \t]+$/gm, "") +
+      "\n" +
+      html.slice(b);
   }
   return html;
 }
