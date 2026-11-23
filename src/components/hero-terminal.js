@@ -215,7 +215,7 @@ export function initHeroTerminal() {
   return api;
 }
 
-// First arrival of a session: the banner types itself in about a second and a half.
+// First arrival of a session: the banner types over the usable desktop.
 // Any tap or key finishes it at once. Without motion, or on later visits, it shows
 // at once, which is also what the page looks like without JavaScript.
 export async function playHeroIntro(reveal, settle) {
@@ -250,12 +250,12 @@ export async function playHeroIntro(reveal, settle) {
   let skipped = false;
   const finish = () => {
     skipped = true;
-    settle?.();
     typed.forEach((span, i) => (span.textContent = words[i]));
     about.classList.remove("is-intro");
     lines.forEach((line) => line.classList.remove("is-pending"));
   };
   const skip = () => {
+    settle?.();
     finish();
     cleanup();
   };
@@ -269,27 +269,23 @@ export async function playHeroIntro(reveal, settle) {
   about.classList.add("is-intro");
   typed.forEach((span) => (span.textContent = ""));
   lines.forEach((line) => line.classList.add("is-pending"));
+  reveal();
 
   const type = async (i) => {
     lines[i].classList.remove("is-pending");
     for (const char of words[i]) {
       if (skipped) return;
       typed[i].textContent += char;
-      await wait(30);
+      await wait(18);
     }
   };
 
   await type(0);
-  if (skipped) return reveal();
-  await wait(140);
-  about.classList.remove("is-intro-name");
-  about.classList.add("is-intro-lede");
-  reveal();
-  await wait(650);
+  if (skipped) return;
+  await wait(80);
   if (skipped) return;
   await type(1);
   if (skipped) return;
-  await wait(120);
   finish();
   cleanup();
 }

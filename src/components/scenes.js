@@ -562,9 +562,13 @@ function handleRoute({ initial = false, force = false } = {}) {
   const sceneEl =
     target.scene === "work" ? $("#work-projects") : el(target.scene);
   const inside = before.scene === target.scene;
+  const betweenProjectAndCase =
+    (before.scene === "work" && target.scene === "case") ||
+    (before.scene === "case" && target.scene === "work");
   transitions
     .run(kind, {
       apply,
+      compact: inside || betweenProjectAndCase,
       pairs: transitionPairs(kind, before, target),
       scene: kind.startsWith("slide") || inside ? sceneEl : el(target.scene),
       source: kind === "open" ? triggerRect() : null,

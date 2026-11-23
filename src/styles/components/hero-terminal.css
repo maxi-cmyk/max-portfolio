@@ -1,5 +1,6 @@
 /* The About console contains the typed banner, output pane and command prompt. */
 .hero-line {
+  min-height: 1lh;
   margin: 8px 0 4px;
   color: var(--muted);
   font: var(--step--1) / 1.4 var(--font-code);
@@ -13,13 +14,6 @@ html.is-scenes #home .about h1 {
 }
 html.is-scenes #home .about .lede {
   margin-top: 6px;
-}
-.about.is-intro #site-title,
-.about.is-intro .lede {
-  opacity: 0;
-}
-.about.is-intro-lede #site-title {
-  opacity: 1;
 }
 .about .lede {
   transition: opacity 240ms ease-out;

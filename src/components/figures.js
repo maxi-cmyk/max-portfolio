@@ -1,114 +1,68 @@
-// Loads the 3D stage only when a figure is on screen and the device can afford
-// it. Until then (and always on weak devices) the pixel-art drawing stays.
+// Keep the pixel-art placeholder until a nearby figure needs the 3D stage.
 import { chooseRenderMode } from "../figures/mode.js";
 
-function detect() {
-  let webgl = false;
-  try {
-    const probe = document.createElement("canvas");
-    webgl = Boolean(probe.getContext("webgl2") || probe.getContext("webgl"));
-  } catch {
-    webgl = false;
-  }
-  return {
-    webgl,
+export function initFigures() {
+  const hosts = [...document.querySelectorAll("[data-figure]")];
+  if (!hosts.length) return;
+
+  const mode = chooseRenderMode({
     reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)")
       .matches,
     saveData: Boolean(navigator.connection?.saveData),
-    deviceMemory: navigator.deviceMemory ?? 0,
-    cores: navigator.hardwareConcurrency ?? 0,
+    deviceMemory: navigator.deviceMemory,
+    cores: navigator.hardwareConcurrency,
+  });
+  let stage;
+  let loading;
+  let unavailable = mode === "fallback";
+  const nearby = new Set();
+  const showFallback = (host) => {
+    host.dataset.figureState = "fallback";
+    host.closest(".stage")?.classList.add("no-3d");
   };
-}
 
-export function initFigures() {
-  const hostsNow = () => [...document.querySelectorAll("[data-figure]")];
-  if (!hostsNow().length) return;
-  const mode = chooseRenderMode(detect());
-  const idle = window.requestIdleCallback
-    ? (fn) => window.requestIdleCallback(fn, { timeout: 1200 })
-    : (fn) => setTimeout(fn, 250);
-
-  if (mode === "fallback") {
-    for (const host of hostsNow()) host.dataset.figureState = "fallback";
-    document
-      .querySelectorAll(".stage")
-      .forEach((stage) => stage.classList.add("no-3d"));
-    window.addEventListener("portfolio:figure", (event) => {
-      event.detail.host.dataset.figureState = "fallback";
-    });
-    return;
-  }
-  for (const host of hostsNow()) {
-    if (host.dataset.figure) host.dataset.figureState = "waiting";
-  }
-
-  let stage = null;
-  let loading = null;
-  async function load() {
-    stage ??= (await import("../figures/stage.js")).createStage({ mode });
-    return stage;
-  }
-
-  async function mountVisible() {
-    if (loading) return loading;
-    const waiting = hostsNow().filter(
-      (host) =>
-        host.dataset.figure &&
-        host.dataset.figureState === "waiting" &&
-        host.getClientRects().length,
-    );
-    if (!waiting.length) return;
-    loading = (async () => {
-      try {
-        const s = await load();
-        for (const host of waiting) s.mount(host);
-      } catch {
-        for (const host of hostsNow()) host.dataset.figureState = "fallback";
-      }
-      loading = null;
-    })();
-    return loading;
-  }
-
-  // A window changed which figure its host shows.
-  window.addEventListener("portfolio:figure", async (event) => {
-    const host = event.detail.host;
-    if (!stage) {
-      if (host.dataset.figure) host.dataset.figureState = "waiting";
+  function sync(host) {
+    if (unavailable) {
+      showFallback(host);
       return;
     }
-    if (host.dataset.figureState === "idle")
-      host.dataset.figureState = "waiting";
-    stage.swap(host);
-  });
+    if (!host.dataset.figure) {
+      stage?.swap(host);
+      return;
+    }
+    if (!nearby.has(host)) return;
+    if (stage) {
+      stage.swap(host);
+      return;
+    }
+    loading ??= import("../figures/stage.js")
+      .then((module) => {
+        stage = module.createStage({ mode });
+        for (const visible of nearby) sync(visible);
+      })
+      .catch(() => {
+        unavailable = true;
+        hosts.forEach(showFallback);
+      });
+  }
+
+  window.addEventListener("portfolio:figure", ({ detail: { host } }) =>
+    sync(host),
+  );
+  if (unavailable) {
+    hosts.forEach(showFallback);
+    return;
+  }
 
   const observer = new IntersectionObserver(
     (entries) => {
-      if (entries.some((e) => e.isIntersecting)) idle(mountVisible);
+      for (const { target, isIntersecting } of entries) {
+        if (isIntersecting) nearby.add(target);
+        else nearby.delete(target);
+      }
+      for (const host of nearby) sync(host);
     },
     { rootMargin: "100px" },
   );
-  hostsNow().forEach((host) => observer.observe(host));
-  // The observer can be quiet in a background tab, so also try shortly after
-  // load and whenever the scene changes; visible, waiting hosts are mounted.
-  setTimeout(() => idle(mountVisible), 600);
-  // Once the page has settled, get every figure ready ahead of time, the ones
-  // a visitor meets first (Work's first project) first.
-  setTimeout(
-    () =>
-      idle(async () => {
-        try {
-          const s = await load();
-          const first = ["winding"];
-          await s.warm(
-            [...first, ...s.figures.filter((id) => !first.includes(id))],
-            idle,
-          );
-        } catch {
-          // Warming is only a head start; the figures still load on demand.
-        }
-      }),
-    2500,
-  );
-  window.addEventListener("portfolio:scene", () => idle(mountVisible));
+  hosts.forEach((host) => observer.observe(host));
 }

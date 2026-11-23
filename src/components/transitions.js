@@ -27,7 +27,6 @@ export function createTransitions({
     typeof document !== "undefined" &&
     typeof document.startViewTransition === "function";
 
-  const ms = (n) => n * speed();
   const flush = () => {
     if (!pending) return;
     const apply = pending;
@@ -76,11 +75,11 @@ export function createTransitions({
     for (const [node] of names.splice(0)) node.style.viewTransitionName = "";
   };
 
-  async function morph(kind, { apply, pairs }) {
+  async function morph(kind, { pairs }, duration) {
     const names = [];
     name(pairs?.old?.(), names);
     root().dataset.vt = kind;
-    root().style.setProperty("--vt-speed", String(speed()));
+    root().style.setProperty("--vt-d", `${duration}ms`);
     const vt = document.startViewTransition(() => {
       // A newer navigation skipped this one and has applied the swap already.
       if (current?.vt !== vt) return;
@@ -104,7 +103,7 @@ export function createTransitions({
 
   // A window opens: it rises a few pixels into place as it fades in. When the
   // control that opened it is known, it grows from that point.
-  async function open({ apply, scene, source }) {
+  async function open({ apply, scene, source }, duration) {
     swap(apply);
     if (!scene) return;
     const rect = scene.getBoundingClientRect();
@@ -121,12 +120,12 @@ export function createTransitions({
         },
         { opacity: 1, transform: "none", transformOrigin: origin },
       ],
-      { duration: ms(260), easing: EASE_OUT },
+      { duration, easing: EASE_OUT },
     );
   }
 
   // A window closes: it sinks and fades quickly, then what is behind fades in.
-  async function close({ apply, scene, from }) {
+  async function close({ apply, scene, from }, duration) {
     const t = token;
     if (from) {
       await play(
@@ -135,7 +134,7 @@ export function createTransitions({
           { opacity: 1, transform: "none" },
           { opacity: 0, transform: "translateY(6px) scale(0.985)" },
         ],
-        { duration: ms(120), easing: EASE_IN, fill: "forwards" },
+        { duration: duration * 0.4, easing: EASE_IN, fill: "forwards" },
       );
       if (t !== token) return;
     }
@@ -145,14 +144,14 @@ export function createTransitions({
     animations.clear();
     if (scene) {
       await play(scene, [{ opacity: 0 }, { opacity: 1 }], {
-        duration: ms(180),
+        duration: duration * (from ? 0.6 : 1),
         easing: EASE_OUT,
       });
     }
   }
 
   // Sideways: the next card or step glides in from the side it came from.
-  async function slide(kind, { apply, scene }) {
+  async function slide(kind, { apply, scene }, duration) {
     swap(apply);
     if (!scene) return;
     const x = kind === "slide-next" ? 18 : -18;
@@ -162,16 +161,16 @@ export function createTransitions({
         { opacity: 0, transform: `translateX(${x}px)` },
         { opacity: 1, transform: "none" },
       ],
-      { duration: ms(240), easing: EASE_OUT },
+      { duration, easing: EASE_OUT },
     );
   }
 
   // A change of topic: a plain cross-fade.
-  async function fade({ apply, scene }) {
+  async function fade({ apply, scene }, duration) {
     swap(apply);
     if (!scene) return;
     await play(scene, [{ opacity: 0 }, { opacity: 1 }], {
-      duration: ms(200),
+      duration,
       easing: EASE_OUT,
     });
   }
@@ -184,16 +183,20 @@ export function createTransitions({
     }
     pending = options.apply;
     const t = token;
+    const baseDuration = options.compact
+      ? 170
+      : ({ open: 280, close: 240 }[kind] ?? 180);
+    const duration = baseDuration * speed();
     if (canMorph()) {
-      await morph(kind, options);
+      await morph(kind, options, duration);
       if (t === token) flush();
       return;
     }
     moving(true);
-    if (kind === "open") await open(options);
-    else if (kind === "close") await close(options);
-    else if (kind === "fade") await fade(options);
-    else await slide(kind, options);
+    if (kind === "open") await open(options, duration);
+    else if (kind === "close") await close(options, duration);
+    else if (kind === "fade") await fade(options, duration);
+    else await slide(kind, options, duration);
     if (t === token) {
       flush();
       cleanup();

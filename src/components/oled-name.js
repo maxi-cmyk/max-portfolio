@@ -10,8 +10,8 @@ import { dft, epicycles, penPath, resample } from "../figures/fourier-math.js";
 
 const COLS_PER_CHAR = 6;
 const ROWS = 7;
-const TRACE_MS = 3000;
-const RESOLVE_MS = 800;
+const TRACE_MS = 1100;
+const RESOLVE_MS = 350;
 const CIRCLES = 90;
 const REPLAY_MS = 14000; // rest between drawings
 

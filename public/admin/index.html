@@ -75,7 +75,11 @@
         min-height: 40px;
         padding: 6px 10px;
         border: 1.5px solid var(--ink);
+        border-radius: 0;
         background: #fff;
+        color: var(--ink);
+        -webkit-appearance: none;
+        appearance: none;
         font: inherit;
       }
       input:focus-visible,
@@ -92,6 +96,10 @@
         border-radius: 8px;
         background: var(--paper);
         box-shadow: 2px 2px 0 var(--ink);
+        /* iOS paints button text in its pale system blue unless told otherwise. */
+        color: var(--ink);
+        -webkit-appearance: none;
+        appearance: none;
         font: inherit;
         font-weight: 700;
         cursor: pointer;

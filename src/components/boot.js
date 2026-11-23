@@ -42,7 +42,9 @@ export function runBoot(screen) {
     timers.add(id);
   };
   let finish;
-  const done = new Promise((resolve) => {
+  let reveal;
+  const revealed = new Promise((resolve) => {
+    reveal = resolve;
     finish = () => {
       if (!root.classList.contains("boot-pending")) return;
       timers.forEach(clearTimeout);
@@ -65,12 +67,12 @@ export function runBoot(screen) {
     );
   };
 
-  // The frame grows from the card's box onto the About window's box. It is one
-  // element animating its box for ~0.4 s: scaling it instead would thicken its
-  // pencil outline unevenly.
+  // The frame grows from the card's box onto the About window's box. Animating
+  // the box keeps the pencil outline the same thickness.
   const wake = () => {
     screen.classList.add("is-waking");
     root.classList.remove("boot-hide");
+    reveal();
     const about = document.querySelector("#home .about");
     if (!about || !frame) return;
     const from = frame.getBoundingClientRect();
@@ -103,5 +105,5 @@ export function runBoot(screen) {
   // A tap or key anywhere skips; the Skip button is the visible way to say so.
   addEventListener("pointerdown", finish, true);
   addEventListener("keydown", finish, true);
-  return done;
+  return revealed;
 }

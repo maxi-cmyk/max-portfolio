@@ -19,6 +19,7 @@ const FIGURES = {
   torus: createTorusFigure,
   boundary: createBoundaryFigure,
 };
+const IDLE_FRAME_MS = 1000 / 30 - 2;
 
 // A figure takes its colours from the element it draws into, so a dark
 // instrument screen (.is-dark) gets pale line art on near-black automatically.
@@ -54,6 +55,24 @@ export function createStage({ mode }) {
   let sinceReport = 0;
   let failed = false;
 
+  const visibility = new IntersectionObserver((changes) => {
+    for (const { target, isIntersecting } of changes) {
+      const entry = entries.get(target);
+      if (entry) entry.visible = isIntersecting;
+    }
+    schedule();
+  });
+  const sizes = new ResizeObserver((changes) => {
+    for (const { target } of changes) {
+      const entry = entries.get(target);
+      if (!entry) continue;
+      entry.width = target.clientWidth;
+      entry.height = target.clientHeight;
+      entry.needsFit = true;
+    }
+    schedule();
+  });
+
   // The off-screen buffer only grows, to the largest figure drawn so far.
   let ratio = 0;
   let bufW = 0;
@@ -84,36 +103,6 @@ export function createStage({ mode }) {
     entry.ctx.drawImage(canvas, 0, canvas.height - sh, sw, sh, 0, 0, sw, sh);
   }
 
-  // The part of a host that is on screen, not under a title bar or a status
-  // strip, and not outside its scrolling window.
-  function visibleRect(host) {
-    const r = host.getBoundingClientRect();
-    if (!host.getClientRects().length || r.width < 2 || r.height < 2)
-      return null;
-    let { left, top, right, bottom } = r;
-    const viewW = window.innerWidth;
-    const viewH = window.innerHeight;
-    const scene = host.closest(".scene");
-    if (scene) {
-      const s = scene.getBoundingClientRect();
-      // Only bars that are showing count: a hidden status strip has no rectangle.
-      const shown = (el) =>
-        el?.getClientRects().length ? el.getBoundingClientRect() : null;
-      const bar = shown(scene.querySelector(":scope > .titlebar"));
-      const status = shown(scene.querySelector(":scope > .statusbar"));
-      left = Math.max(left, s.left);
-      right = Math.min(right, s.right);
-      top = Math.max(top, bar ? bar.bottom : s.top);
-      bottom = Math.min(bottom, status ? status.top : s.bottom);
-    }
-    left = Math.max(left, 0);
-    top = Math.max(top, 0);
-    right = Math.min(right, viewW);
-    bottom = Math.min(bottom, viewH);
-    if (right - left < 2 || bottom - top < 2) return null;
-    return { x: left, y: top, w: right - left, h: bottom - top, full: r };
-  }
-
   // Tells the controls what the figure changed, and refreshes the readout.
   function report(host, entry, force = false) {
     const params = entry.figure.params?.();
@@ -134,27 +123,41 @@ export function createStage({ mode }) {
 
   function draw(now) {
     raf = 0;
-    if (failed) return;
-    const dt = Math.min((now - last) / 1000 || 0.016, 0.05);
+    if (failed || document.hidden) return;
+    const visible = [...entries.values()].filter(
+      (entry) => entry.visible && entry.width >= 2 && entry.height >= 2,
+    );
+    if (!visible.length) {
+      last = 0;
+      return;
+    }
+    const interactive = visible.some(
+      ({ orbit, activeUntil, dirty, needsFit }) =>
+        dirty ||
+        needsFit ||
+        orbit.dragging ||
+        orbit.vyaw ||
+        orbit.vpitch ||
+        now < activeUntil,
+    );
+    if (mode === "live" && !interactive && now - last < IDLE_FRAME_MS) {
+      schedule();
+      return;
+    }
+    const dt = last ? Math.min((now - last) / 1000, 0.05) : 0.016;
     last = now;
     clock += dt;
     sinceReport += dt;
     renderer.setScissorTest(true);
-    let anyVisible = false;
     let moving = false;
-    for (const [host, entry] of entries) {
-      const rect = visibleRect(host);
-      if (!rect) continue;
-      anyVisible = true;
-      // Layout size, not the on-screen box, which a window's opening
-      // animation scales.
-      const w = entry.host.clientWidth;
-      const h = entry.host.clientHeight;
-      if (w < 2 || h < 2) continue;
+    for (const entry of visible) {
+      const { host, width: w, height: h } = entry;
       fit(w, h);
-      entry.figure.setSize(w, h);
-      // A thumbnail fills its small screen, so it zooms in past the full-fit distance.
-      if (entry.thumb) entry.figure.camera.position.z *= 0.58;
+      if (entry.needsFit) {
+        entry.figure.setSize(w, h);
+        if (entry.thumb) entry.figure.camera.position.z *= 0.58;
+        entry.needsFit = false;
+      }
       if (stepOrbit(entry.orbit, dt)) moving = true;
       entry.figure.update({
         time: clock,
@@ -168,15 +171,14 @@ export function createStage({ mode }) {
       renderer.clear();
       renderer.render(entry.figure.scene, entry.figure.camera);
       present(entry, w, h);
+      if (host.dataset.figureState !== mode) host.dataset.figureState = mode;
       if (entry.dirty || sinceReport > 0.2) {
         report(host, entry, entry.dirty);
         entry.dirty = false;
       }
     }
     if (sinceReport > 0.2) sinceReport = 0;
-    // Loop only while something is showing and the tab is in front.
-    if ((mode === "live" || moving) && anyVisible && !document.hidden)
-      schedule();
+    if (mode === "live" || moving) schedule();
   }
 
   function schedule() {
@@ -203,54 +205,77 @@ export function createStage({ mode }) {
       thumb: host.hasAttribute("data-thumb"),
       paramsKey: "",
       readout: "",
+      dirty: true,
+      needsFit: true,
+      activeUntil: 0,
     };
   }
 
   function listen(host, entry) {
     // Tile thumbnails only turn on their own; the tile is a link.
     if (host.hasAttribute("data-thumb")) return;
+    const { signal } = entry.listeners;
     const track = (event) => {
       const r = host.getBoundingClientRect();
       entry.pointer.x = ((event.clientX - r.left) / r.width) * 2 - 1;
       entry.pointer.y = ((event.clientY - r.top) / r.height) * 2 - 1;
+      entry.activeUntil = performance.now() + 150;
       schedule();
     };
     if (mode === "live") {
-      host.addEventListener("pointermove", track);
-      host.addEventListener("pointerenter", () => {
-        entry.figure.setHover?.(true);
-        schedule();
-      });
-      host.addEventListener("pointerleave", () => {
-        entry.figure.setHover?.(false);
-        entry.pointer.x = entry.pointer.y = 0;
-        schedule();
-      });
+      host.addEventListener("pointermove", track, { signal });
+      host.addEventListener(
+        "pointerenter",
+        () => {
+          entry.figure.setHover?.(true);
+          entry.activeUntil = performance.now() + 150;
+          schedule();
+        },
+        { signal },
+      );
+      host.addEventListener(
+        "pointerleave",
+        () => {
+          entry.figure.setHover?.(false);
+          entry.pointer.x = entry.pointer.y = 0;
+          entry.activeUntil = performance.now() + 150;
+          schedule();
+        },
+        { signal },
+      );
     }
     // Drag to turn the figure. On touch, a vertical swipe still scrolls the page
     // (touch-action: pan-y), so a finger turns it left and right only.
     let dragFrom = null;
-    host.addEventListener("pointerdown", (event) => {
-      entry.figure.nudge?.(1);
-      dragFrom = { x: event.clientX, y: event.clientY, t: event.timeStamp };
-      entry.orbit.dragging = true;
-      entry.orbit.vyaw = entry.orbit.vpitch = 0;
-      host.setPointerCapture?.(event.pointerId);
-      host.classList.add("is-turning");
-      schedule();
-    });
-    host.addEventListener("pointermove", (event) => {
-      if (!dragFrom) return;
-      const dt = (event.timeStamp - dragFrom.t) / 1000;
-      dragOrbit(
-        entry.orbit,
-        event.clientX - dragFrom.x,
-        event.pointerType === "touch" ? 0 : event.clientY - dragFrom.y,
-        dt,
-      );
-      dragFrom = { x: event.clientX, y: event.clientY, t: event.timeStamp };
-      schedule();
-    });
+    host.addEventListener(
+      "pointerdown",
+      (event) => {
+        entry.figure.nudge?.(1);
+        dragFrom = { x: event.clientX, y: event.clientY, t: event.timeStamp };
+        entry.orbit.dragging = true;
+        entry.orbit.vyaw = entry.orbit.vpitch = 0;
+        host.setPointerCapture?.(event.pointerId);
+        host.classList.add("is-turning");
+        schedule();
+      },
+      { signal },
+    );
+    host.addEventListener(
+      "pointermove",
+      (event) => {
+        if (!dragFrom) return;
+        const dt = (event.timeStamp - dragFrom.t) / 1000;
+        dragOrbit(
+          entry.orbit,
+          event.clientX - dragFrom.x,
+          event.pointerType === "touch" ? 0 : event.clientY - dragFrom.y,
+          dt,
+        );
+        dragFrom = { x: event.clientX, y: event.clientY, t: event.timeStamp };
+        schedule();
+      },
+      { signal },
+    );
     const release = () => {
       if (!dragFrom) return;
       dragFrom = null;
@@ -258,8 +283,9 @@ export function createStage({ mode }) {
       host.classList.remove("is-turning");
       schedule();
     };
-    host.addEventListener("pointerup", release);
-    host.addEventListener("pointercancel", release);
+    host.addEventListener("pointerup", release, { signal });
+    host.addEventListener("pointercancel", release, { signal });
+    host.addEventListener("lostpointercapture", release, { signal });
   }
 
   function mount(host) {
@@ -270,9 +296,11 @@ export function createStage({ mode }) {
     entry.canvas.className = "figure-canvas";
     entry.canvas.setAttribute("aria-hidden", "true");
     entry.ctx = entry.canvas.getContext("2d");
+    entry.listeners = new AbortController();
     host.prepend(entry.canvas);
     entries.set(host, entry);
-    host.dataset.figureState = mode;
+    visibility.observe(host);
+    sizes.observe(host);
     listen(host, entry);
     report(host, entry, true);
     schedule();
@@ -291,10 +319,14 @@ export function createStage({ mode }) {
       entry.pointer = old.pointer;
       entry.orbit = old.orbit;
       entries.set(host, Object.assign(old, entry));
-      host.dataset.figureState = mode;
+      host.dataset.figureState = "waiting";
       report(host, old, true);
     } else {
       old.canvas.remove();
+      old.listeners.abort();
+      host.classList.remove("is-turning");
+      visibility.unobserve(host);
+      sizes.unobserve(host);
       entries.delete(host);
       host.dataset.figureState = "idle";
     }
@@ -319,53 +351,18 @@ export function createStage({ mode }) {
     schedule();
   });
 
-  const wake = () => schedule();
-  window.addEventListener("resize", wake);
-  window.addEventListener("scroll", wake, true);
-  window.addEventListener("portfolio:scene", wake);
-  document.addEventListener("visibilitychange", wake);
-  document.addEventListener("toggle", wake, true);
+  window.addEventListener("resize", schedule);
+  document.addEventListener("visibilitychange", schedule);
   canvas.addEventListener("webglcontextlost", (event) => {
     event.preventDefault();
     failed = true;
+    visibility.disconnect();
+    sizes.disconnect();
     for (const [host, entry] of entries) {
       host.dataset.figureState = "fallback";
       entry.canvas.remove();
     }
   });
 
-  // Builds each figure once, ahead of time, and has the GPU compile its
-  // shaders and upload its textures, one figure per idle slot. Otherwise a
-  // figure's first frame stalls for 60 to 170 ms while that happens, in the
-  // middle of its window opening. The warmed figures are never drawn; they are
-  // kept so the compiled programs stay in three.js's cache for the real ones.
-  const warmed = new Map();
-  async function warm(ids, idle) {
-    for (const id of ids) {
-      if (failed || warmed.has(id) || !FIGURES[id]) continue;
-      await new Promise((resolve) => idle(resolve));
-      if ([...entries.values()].some((entry) => entry.id === id)) continue;
-      const host = document.querySelector(`[data-figure="${id}"]`);
-      const figure = FIGURES[id](palette(host ?? document.body));
-      figure.setSize(400, 300);
-      figure.update({
-        time: 0,
-        dt: 0.016,
-        pointer: { x: 0, y: 0 },
-        orbit: createOrbit(),
-        still: true,
-      });
-      figure.scene.traverse((node) => {
-        if (node.material?.map) renderer.initTexture(node.material.map);
-      });
-      try {
-        await renderer.compileAsync(figure.scene, figure.camera);
-      } catch {
-        renderer.compile(figure.scene, figure.camera);
-      }
-      warmed.set(id, figure);
-    }
-  }
-
-  return { mount, swap, wake, warm, figures: Object.keys(FIGURES) };
+  return { swap };
 }

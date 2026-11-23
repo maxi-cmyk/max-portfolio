@@ -11,17 +11,17 @@ export function getTypingFrames(text) {
 export function getBootFrames() {
   return [
     { id: "tap", at: 0, line: "$ tap --card" },
-    { id: "field", at: 420, line: "13.56 MHz · field found" },
+    { id: "field", at: 170, line: "13.56 MHz · field found" },
     // The line clears as the desktop builds, so it never sits over the icons.
-    { id: "wake", at: 900, line: "" },
-    { id: "done", at: 1420, line: "" },
+    { id: "wake", at: 410, line: "" },
+    { id: "done", at: 730, line: "" },
   ];
 }
 
 export function getBootTiming() {
   return {
-    typingDelay: 14, // per character of a line
-    grow: 380, // the card growing into the window's frame
+    typingDelay: 9, // per character of a line
+    grow: 280, // the card growing into the window's frame
     fadeOut: 140, // the start layer fading once the frame has landed
     fallback: 3000, // the desktop shows by then whatever happens
   };

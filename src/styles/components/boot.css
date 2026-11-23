@@ -26,6 +26,7 @@ html.boot-pending .boot-screen,
 .boot-screen.is-waking {
   background-color: transparent;
   background-image: none;
+  pointer-events: none;
 }
 .boot-screen.is-gone {
   opacity: 0;
@@ -258,14 +259,14 @@ html.boot-wake .menubar {
     opacity 200ms ease-out 40ms;
 }
 html.boot-wake #home .about {
-  transition: opacity 160ms ease-out 330ms;
+  transition: opacity 140ms ease-out 100ms;
 }
 html.boot-wake #home .desktop-icons .icon,
 html.boot-wake #home .field-art-card {
   transition:
     opacity 200ms ease-out,
     scale 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
-  transition-delay: calc(160ms + var(--n, 0) * 45ms);
+  transition-delay: calc(60ms + var(--n, 0) * 22ms);
 }
 html.boot-hide .menubar {
   opacity: 0;
