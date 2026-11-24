@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { allProjects, otherProjects } from "../src/data/projects.js";
-import { getSkillGraph, practiceNode, skillId } from "../src/data/skills.js";
+import { getSkillGraph, skillId } from "../src/data/skills.js";
 import { getSkillStack, groupSkillUses } from "../src/data/skill-stack.js";
 import {
   parentScene,
@@ -28,7 +28,7 @@ test("every skill is backed by at least one project", () => {
 
 test("every tag on every project becomes a skill, and skill ids are unique", () => {
   const labels = new Set(graph.skills.map((s) => s.label));
-  for (const p of [...allProjects, ...otherProjects, practiceNode]) {
+  for (const p of [...allProjects, ...otherProjects]) {
     for (const tag of p.tags) assert.ok(labels.has(tag), `${p.name}: ${tag}`);
   }
   const ids = graph.skills.map((s) => s.id);
@@ -36,15 +36,6 @@ test("every tag on every project becomes a skill, and skill ids are unique", () 
   assert.equal(skillId("C++"), "cpp");
   assert.equal(skillId("C"), "c");
   assert.equal(skillId("DFT / FFT"), "dft-fft");
-});
-
-test("the algorithms practice backs C and Python with its reported figure", () => {
-  assert.equal(practiceNode.external, true);
-  assert.match(practiceNode.note, /114 of 150/);
-  for (const label of ["C", "Python"]) {
-    const skill = graph.skills.find((s) => s.label === label);
-    assert.ok(skill.projects.includes("practice"), label);
-  }
 });
 
 test("every project link goes somewhere real", () => {
@@ -76,15 +67,13 @@ test("draft and missing notes go into the same bare evidence group", () => {
   const draft = { project, text: "Draft note", draft: true };
   const missing = { project };
   const confirmed = { project, text: "Confirmed note" };
-  const practice = { project: practiceNode, text: practiceNode.note };
-  assert.deepEqual(groupSkillUses([draft, practice, confirmed, missing]), {
+  assert.deepEqual(groupSkillUses([draft, confirmed, missing]), {
     documented: [confirmed],
     bare: [draft, missing],
-    practice,
   });
 });
 
-test("static Skills HTML is a table: one row group per skill, practice last, single-project counts hidden", () => {
+test("static Skills HTML has one row group per skill and hides single-project counts", () => {
   for (const { id, rows } of getSkillStack().categories) {
     const hash = skillsHash(id);
     assert.match(html, new RegExp(`href="${hash}"[^>]+aria-current="page"`));
@@ -101,7 +90,10 @@ test("static Skills HTML is a table: one row group per skill, practice last, sin
     for (const row of rows) {
       const markup = groups.find((part) => part.includes(`id="use-${row.id}"`));
       assert.ok(markup, row.label);
-      assert.match(markup, /^<tr class="skills-group-head"><th scope="rowgroup" colspan="2"/);
+      assert.match(
+        markup,
+        /^<tr class="skills-group-head"><th scope="rowgroup" colspan="2"/,
+      );
       assert.equal(
         markup.match(/<span class="skills-project-count">(.*?)<\/span>/)?.[1],
         row.count > 1 ? `${row.count} projects` : undefined,
@@ -111,13 +103,11 @@ test("static Skills HTML is a table: one row group per skill, practice last, sin
       for (const use of row.uses) {
         const tr = trs.find((t) => t.includes(`href="${use.project.href}"`));
         assert.ok(tr, use.project.name);
-        if (use.project.kind === "practice") {
-          assert.equal(id, "languages");
-          assert.ok(["c", "python"].includes(row.id));
-          assert.match(tr, /class="is-practice">.*>Practice<.*<span class="skills-note">/s);
-          assert.equal(trs.at(-1), tr, "practice comes last");
-        } else if (use.text && !use.draft) {
-          assert.match(tr, /^><td>.*<\/a><\/td><td><span class="skills-note">/s);
+        if (use.text && !use.draft) {
+          assert.match(
+            tr,
+            /^><td>.*<\/a><\/td><td><span class="skills-note">/s,
+          );
         } else {
           assert.match(tr, /class="is-bare">/);
           assert.doesNotMatch(tr, /skills-note/);

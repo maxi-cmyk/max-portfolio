@@ -19,8 +19,9 @@ additional browser requests.
   and reduced-motion contract.
 - `components/subpage.css` — focus subpage shell and project cards.
 - `components/case-map.css` — the case-study step map and step tables.
+- `components/exhibit.css` — the Work window's exhibit: a project's clips and 3D figure as slides, and where the panel sits in the card.
 - `components/contact-note.css` — the "Currently" sticky note in the Contact window.
-- `components/view-transitions.css` — screen-change motion: what travels between screens, and how the 3D canvas fades.
+- `components/view-transitions.css` — screen-change motion: what travels between screens.
 - `effects/terminal-glitch.css` — the terminal sudo glitch effect.
 - `themes/retro-apple.css` — System 7 visual overrides; loaded after `main.css`
   by `index.html` so it remains the active theme.

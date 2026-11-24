@@ -3,7 +3,7 @@
 // `check` names the text that must appear in the project's own data, and a test
 // holds each row to it. LED colours mark the three bands of music_LEDs.
 import { BANDS } from "../figures/winding-math.js";
-import { SECRET_BYTES, DELAY_MS } from "../figures/staircase-math.js";
+import { SECRET_BYTES, DELAY_MS } from "../figures/timing-math.js";
 import { HEIGHT, WIDTH } from "../figures/life.js";
 
 const band = (name) => `${BANDS[name][0]}–${BANDS[name][1]} Hz`;
@@ -19,8 +19,8 @@ export const datasheets = {
       {
         k: "Bins",
         v: "50 Hz apart, Nyquist 3.2 kHz",
-        // The case study states both in its sampling table.
-        check: '["Bin spacing","50 Hz"],["Nyquist limit","3.2 kHz"]',
+        // The case study's FFT stage states both.
+        check: "50 Hz apart, up to 3.2 kHz",
       },
       { k: "GPIO 19", v: `red · ${band("red")}`, led: "r", readme: true },
       { k: "GPIO 18", v: `green · ${band("green")}`, led: "g", readme: true },
@@ -47,12 +47,12 @@ export const datasheets = {
       {
         k: "Scores",
         v: "separate tables: ESP32 and browser",
-        check: "Browser and ESP32 score tables stay separate",
+        check: "its own local leaderboard",
       },
     ],
     bar: {
-      label: "20 ms step, in order (not to scale)",
-      parts: ["Sample", "Update", "Render", "Sound"],
+      label: "One 20 ms ESP32 frame, in order (not to scale)",
+      parts: ["Sleep", "Input", "Update + draw", "Buzzer"],
       check: "20 ms",
     },
   },
@@ -71,7 +71,7 @@ export const datasheets = {
     rows: [
       {
         k: "Board",
-        v: `${WIDTH}×${HEIGHT}, wrapped into a torus`,
+        v: `${WIDTH}×${HEIGHT} LED matrix, edges wrap`,
         check: "32×8",
       },
       {
@@ -115,12 +115,12 @@ export const datasheets = {
       {
         k: "Review",
         v: "a caregiver approves each memory before it is shown",
-        check: "until a caregiver approves it",
+        check: "The memory stays out of the feed",
       },
       {
         k: "Context",
         v: "local LLaVA drafts summary, people, place and date",
-        check: "summary, people, place, and date context",
+        check: "summary, people, place, and date",
       },
       {
         k: "Cooldown",

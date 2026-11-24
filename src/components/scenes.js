@@ -1,20 +1,20 @@
 import { allProjects, caseStudyProjects } from "../data/projects.js";
-import { getCaseStudyView } from "../data/case-study-steps.js";
-import { parseRoute, projectHash, workHash } from "../navigation/routes.js";
+import { parseRoute, workHash } from "../navigation/routes.js";
 import {
   createSceneMachine,
   parentScene,
   routeToScene,
+  scenePath,
   sceneToHash,
 } from "../navigation/scenes.js";
-import { renderCaseMap, renderStepTable } from "./case-map.js";
+import { renderCaseMap } from "./case-map.js";
 import { getWorkCategories, initWork, renderWork } from "./work.js";
 import { initHeroTerminal } from "./hero-terminal.js";
-import { renderDatasheet } from "../data/datasheets.js";
 import { initPalette } from "./palette-ui.js";
 import { createLights } from "./lights.js";
 import { figureFor } from "../data/figures.js";
 import { renderControls } from "./figure-controls.js";
+import { createExhibit, fillExhibit } from "./exhibit.js";
 import {
   createWindowMemory,
   parseZoomed,
@@ -28,50 +28,43 @@ const baseTitle = "Max Leong — Portfolio";
 const instant = { behavior: "instant" };
 
 // Scene -> the element that holds it, its heading, its desktop icon and its
-// window title. `title` names the window for screen readers and the browser tab;
-// `path` is what its title bar shows, as a shell prompt would.
+// window title. The shell path is derived from the active scene.
 const SCENE_ELEMENTS = {
   hub: {
     el: "#home",
     heading: "#site-title",
     icon: "work",
     title: "About Max",
-    path: "~",
   },
   work: {
     el: "#work",
     heading: "#work-title",
     icon: "work",
     title: "Work",
-    path: "~/work",
   },
   case: {
     el: "#case",
     heading: "#case-title",
     icon: "work",
     title: "Case study",
-    path: "~/work/case",
   },
   skills: {
     el: "#skills",
     heading: "#skills-title",
     icon: "skills",
     title: "Skills",
-    path: "~/skills",
   },
   credentials: {
     el: "#certificates",
     heading: "#certificates-title",
     icon: "credentials",
     title: "Credentials",
-    path: "~/credentials",
   },
   contact: {
     el: "#contact",
     heading: "#contact-title",
     icon: "contact",
     title: "Contact",
-    path: "~/contact",
   },
 };
 
@@ -81,7 +74,6 @@ let machine;
 let drawer;
 let palette;
 let workInfo = { slugs: [], index: 0, current: null };
-let caseInfo = { slug: null, step: 1, total: 1 };
 let rendered = null;
 let transitions;
 let pendingDirection = 0;
@@ -108,122 +100,106 @@ function buildCaseScene() {
   section.setAttribute("aria-labelledby", "case-title");
   section.hidden = true;
   section.innerHTML = `<div class="case-copy">
-    <nav id="case-rail" class="case-rail" aria-label="Case-study steps"></nav>
-    <p id="case-kicker" class="case-kicker"></p>
     <h2 id="case-title" tabindex="-1"></h2>
-    <div class="case-note"><p id="case-body" class="case-body"></p>
-      <div id="case-more" class="case-more"></div>
-      <pre id="case-code" class="case-code" hidden><code></code></pre>
-      <div id="case-table"></div>
-    </div>
+    <div class="case-note"><p id="case-body" class="case-body"></p></div>
     <div id="case-map"></div>
-    <details id="case-specs" class="project-specs"><summary>Technical details</summary><div id="case-sheet"></div></details>
     <p id="case-links" class="case-actions"></p>
-    <nav id="case-status" class="case-pager statusbar" aria-label="Case-study pagination"></nav>
   </div>`;
   $("#landing-view").append(section);
 }
 
-// Work and case-study windows carry a stage for the project's 3D figure; a
-// project with no figure yet shows an explicit WIP frame.
+// The Work window carries the exhibit: the open project's clips and its
+// figure as slides (exhibit.js), placed in the open project's card.
 function buildStages() {
-  for (const selector of ["#work", "#case"]) {
-    const scene = $(selector);
-    if (!scene) continue;
-    const figure = document.createElement("figure");
-    figure.className = "stage is-empty";
-    figure.setAttribute("role", "group");
-    figure.setAttribute("aria-label", "Project figure");
-    const work = selector === "#work";
-    const body = `<div class="stage-body">
+  const scene = $("#work");
+  if (!scene) return;
+  const exhibit = createExhibit(`<div class="stage-body">
         <div class="figure-frame"><div class="figure-host" data-figure="" data-figure-state="idle" aria-hidden="true"></div></div>
         <p class="figure-caption" data-caption></p>
         <div class="figure-controls" data-controls></div>
         <p class="figure-readout" data-readout></p>
-      </div>`;
-    figure.innerHTML = `<div class="stage-bar"><span data-stage-title></span></div>${work ? body : `<div class="case-figure-sketch"></div><details class="case-figure-controls" open><summary>Explore the interactive figure</summary>${body}</details>`}`;
-    if (!work) {
-      figure
-        .querySelector(".case-figure-sketch")
-        .append($("#case-transform-sketch").content.cloneNode(true));
-    }
-    const anchor = scene.querySelector(":scope > .statusbar");
-    if (anchor) anchor.before(figure);
-    else scene.append(figure);
-  }
+      </div>`);
+  const anchor = scene.querySelector(":scope > .statusbar");
+  if (anchor) anchor.before(exhibit);
+  else scene.append(exhibit);
 }
 
-const FIGURE_NUMBER = { winding: 2, staircase: 3, torus: 4, boundary: 5 };
+const FIGURE_NUMBER = { winding: 2, terminal: 3, torus: 4, robustness: 5 };
 const stageCleanup = new Map();
 
-function updateStage(selector, slug, step, total) {
-  const stage = $(`${selector} > .stage`);
+// The exhibit shows the open project's clips and figure, and moves into its
+// card: after the summary on a phone, beside it on a laptop (exhibit.css).
+function updateStage(slug) {
+  const stage = $("#work .exhibit");
   if (!stage) return;
-  const host = stage.querySelector(".figure-host");
+  updateFigure(stage, slug);
   const figure = figureFor(slug);
-  const disclosure = stage.querySelector(".case-figure-controls");
-  if (disclosure) {
-    const sketch = slug === "cya" && step === 3;
-    if (sketch !== stage.classList.contains("has-step-sketch")) {
-      stage.classList.toggle("has-step-sketch", sketch);
-      disclosure.open = !sketch;
-    }
-  }
-  if (!figure) {
-    stageCleanup.get(host)?.();
-    stageCleanup.delete(host);
-    stage.classList.add("is-empty");
-    stage.querySelector("[data-stage-title]").textContent = "";
-    stage.querySelector("[data-caption]").textContent = "";
-    stage.querySelector("[data-readout]").textContent = "";
-    stage.querySelector("[data-controls]").replaceChildren();
-    if (host.dataset.figure) {
-      host.dataset.figure = "";
-      window.dispatchEvent(
-        new CustomEvent("portfolio:figure", { detail: { host } }),
-      );
-    }
-    return;
-  }
-  stage.classList.remove("is-empty");
-  stage.querySelector("[data-stage-title]").textContent =
-    `Fig. ${FIGURE_NUMBER[figure.id]} · ${step ? `step ${step}` : figure.title}`;
-  if (step) {
-    host.dataset.step = step;
-    host.dataset.stepTotal = total;
-  }
-  if (host.dataset.figure !== figure.id) {
-    stageCleanup.get(host)?.();
-    if (selector === "#work") {
+  fillExhibit(
+    stage,
+    allProjects.find((p) => p.slug === slug),
+    figure ? `Fig. ${FIGURE_NUMBER[figure.id]} · ${figure.title}` : null,
+  );
+  const slot = $("#work-projects > :not([hidden]) [data-exhibit-slot]");
+  if (slot && stage.parentElement !== slot) slot.append(stage);
+}
+
+// Swaps the figure slide to the project's figure: a 3D figure drawn by the
+// shared stage into the host, or a panel (HTML and 2D canvas) beside it.
+function updateFigure(stage, slug) {
+  const host = stage.querySelector(".figure-host");
+  const frame = stage.querySelector(".figure-frame");
+  const figure = figureFor(slug);
+  if ((figure?.id ?? "") === (stage.dataset.figureId ?? "")) return;
+  stageCleanup.get(stage)?.();
+  stageCleanup.delete(stage);
+  stage.dataset.figureId = figure?.id ?? "";
+  frame.classList.toggle("is-panel", Boolean(figure?.panel));
+  stage.querySelector("[data-caption]").textContent = figure?.caption ?? "";
+  stage.querySelector("[data-readout]").textContent = "";
+  stage.querySelector("[data-controls]").replaceChildren();
+  const want = figure && !figure.panel ? figure.id : "";
+  if (host.dataset.figure !== want) {
+    if (want) {
       const fallback = $(
         "#work-projects > :not([hidden]) [data-figure-fallback]",
       );
-      host.replaceChildren(fallback.content.cloneNode(true));
+      host.replaceChildren(fallback?.content.cloneNode(true) ?? "");
+      if (host.dataset.figureState === "idle")
+        host.dataset.figureState = "waiting";
     }
-    host.dataset.figure = figure.id;
-    if (host.dataset.figureState === "idle")
-      host.dataset.figureState = "waiting";
-    stage.querySelector("[data-caption]").textContent = figure.caption;
-    stageCleanup.set(
-      host,
-      renderControls(stage.querySelector("[data-controls]"), host, figure),
-    );
+    host.dataset.figure = want;
     window.dispatchEvent(
       new CustomEvent("portfolio:figure", { detail: { host } }),
     );
   }
-  if (step) {
-    window.dispatchEvent(
-      new CustomEvent("figure:step", { detail: { host, step, total } }),
-    );
+  if (!figure) return;
+  const cleanups = [];
+  if (figure.panel) {
+    const panel = document.createElement("div");
+    panel.className = "figure-panel";
+    frame.append(panel);
+    let live = true;
+    let unmount = null;
+    import("../figures/panels.js").then(({ mountPanel }) => {
+      if (live) unmount = mountPanel(figure.id, panel, { host, stage });
+    });
+    cleanups.push(() => {
+      live = false;
+      unmount?.();
+      panel.remove();
+    });
   }
+  cleanups.push(
+    renderControls(stage.querySelector("[data-controls]"), host, figure),
+  );
+  stageCleanup.set(stage, () => cleanups.forEach((done) => done?.()));
 }
 
 // Every scene except the desktop is a window: a striped title bar with a close
 // box. The close box goes one level up, like Esc.
 function buildTitleBars() {
   zoomed = parseZoomed(sessionStorageGet("zoomed"));
-  for (const [scene, { el: selector, title, icon, path }] of Object.entries(
+  for (const [scene, { el: selector, title, icon }] of Object.entries(
     SCENE_ELEMENTS,
   )) {
     if (scene === "hub") continue;
@@ -237,13 +213,30 @@ function buildTitleBars() {
     });
     const bar = document.createElement("div");
     bar.className = "titlebar";
-    bar.innerHTML = `<span class="titlebar-title" aria-hidden="true">max@portfolio:${path}</span>`;
+    bar.innerHTML =
+      '<span class="titlebar-title" aria-hidden="true"><span class="titlebar-prefix">max@portfolio:</span><span class="titlebar-folder"></span><span class="titlebar-path"></span><span class="titlebar-suffix"></span></span>';
     bar.prepend(lights.el);
     node.prepend(bar);
     lightsByScene.set(scene, lights);
     node.classList.toggle("is-zoomed", zoomed.includes(scene));
     lights.setZoomed(zoomed.includes(scene));
   }
+}
+
+function renderWindowPath(state) {
+  if (state.scene === "hub") return;
+  const path = scenePath(state);
+  const label = el(state.scene).querySelector(
+    ":scope > .titlebar .titlebar-title",
+  );
+  const folder = path.startsWith("~/work/") ? "~/work/" : "";
+  const suffix = state.scene === "case" ? "/case" : "";
+  const leaf = path.slice(folder.length, path.length - suffix.length);
+  label.title = `max@portfolio:${path}`;
+  label.classList.toggle("is-long-path", Boolean(folder) && path.length > 21);
+  label.querySelector(".titlebar-folder").textContent = folder;
+  label.querySelector(".titlebar-path").textContent = leaf;
+  label.querySelector(".titlebar-suffix").textContent = suffix;
 }
 
 function sessionStorageGet(key) {
@@ -288,50 +281,14 @@ function syncIcons() {
   });
 }
 
+// A case study is one page: the summary, the project's diagram and notes,
+// then its links.
 function renderCase(state) {
   const project = caseStudyProjects.find((p) => p.slug === state.slug);
-  const steps = getCaseStudyView(project.insights);
-  const step = Math.min(Math.max(state.step ?? 1, 1), steps.length);
-  caseInfo = { slug: project.slug, step, total: steps.length };
-  const current = steps[step - 1];
-  $("#case-kicker").textContent =
-    `Step ${step} of ${steps.length} · ${project.name}`;
-  $("#case-title").textContent = current.title;
-  const specs = $("#case-specs");
-  const sheet = step === 1 ? renderDatasheet(project.name, project.slug) : "";
-  specs.hidden = !sheet;
-  specs.open = false;
-  $("#case-sheet").innerHTML = sheet;
-  $("#case-body").textContent = current.body;
-  $("#case-more").replaceChildren(
-    ...(current.more ?? []).map((text) => {
-      const p = document.createElement("p");
-      p.textContent = text;
-      return p;
-    }),
-  );
-  $("#case-table").innerHTML = renderStepTable(current.table);
-  $("#case-map").innerHTML = renderCaseMap(project.insights, step);
-  const code = $("#case-code");
-  code.hidden = !current.code;
-  code.querySelector("code").textContent = current.code ?? "";
-  const hash = (n) => projectHash(project.slug, n > 1 ? n : undefined);
-  const prev = ((step - 2 + steps.length) % steps.length) + 1;
-  const next = (step % steps.length) + 1;
-  const text = (value) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;");
-  // The rail: one numbered box per step, the current one filled. Each names its
-  // step on hover and to screen readers; the current title is the heading below.
-  $("#case-rail").innerHTML = `<ol style="--steps:${steps.length}">${steps
-    .map((s, i) => {
-      const title = text(s.title).replace(/"/g, "&quot;");
-      const current = i + 1 === step ? ' aria-current="step"' : "";
-      return `<li${i + 1 < step ? ' class="is-done"' : ""}><a href="${hash(i + 1)}" data-sideways data-title="${title}" aria-label="Step ${i + 1}: ${title}"${current}>${i + 1}</a></li>`;
-    })
-    .join("")}</ol>`;
-  $("#case-status").innerHTML =
-    `<a class="push" href="${hash(prev)}" data-sideways aria-label="Previous step">‹ Prev</a>
-    <p class="work-count">Step ${step} of ${steps.length}</p>
-    <a class="push" href="${hash(next)}" data-sideways aria-label="Next step">Next ›</a>`;
+  $("#case").classList.add("is-single-page");
+  $("#case-title").textContent = project.name;
+  $("#case-body").textContent = project.insights.summary;
+  $("#case-map").innerHTML = renderCaseMap(project.insights);
   $("#case-links").innerHTML = [
     ...(project.live ? [project.live] : []),
     ...project.links,
@@ -341,7 +298,7 @@ function renderCase(state) {
         `<a class="terminal-link" href="${l.url}" target="_blank" rel="noreferrer">${l.label === "github" ? "Source" : l.label} ↗</a>`,
     )
     .join("");
-  return { project, step, total: steps.length, title: current.title };
+  return { project };
 }
 
 function describe(state, info) {
@@ -364,7 +321,7 @@ function describe(state, info) {
     case "case":
       return {
         title: `${info.project.name} — ${baseTitle}`,
-        say: `${info.project.name} case study. Step ${info.step} of ${info.total}: ${info.title}.`,
+        say: `${info.project.name} case study.`,
       };
     case "skills":
       return {
@@ -392,14 +349,12 @@ function renderSkills(category) {
     page.hidden = page.dataset.skillPage !== category;
   });
   skills.setAttribute("aria-labelledby", headingId);
-  skills.querySelector(".titlebar-title").textContent =
-    `max@portfolio:~/skills${category ? `/${category}` : ""}`;
   const heading = document.getElementById(headingId);
   return { heading, name: heading.textContent };
 }
 
 function render(state, { initial = false } = {}) {
-  const key = `${state.scene}|${state.slug ?? state.category ?? ""}|${state.step ?? ""}`;
+  const key = `${state.scene}|${state.slug ?? state.category ?? ""}`;
   const changed = rendered !== key;
   rendered = key;
 
@@ -423,9 +378,11 @@ function render(state, { initial = false } = {}) {
   }
   if (state.scene === "case") info = renderCase(state);
   if (state.scene === "skills") info = renderSkills(state.category);
-  if (state.scene === "work") updateStage("#work", workInfo.current);
-  if (state.scene === "case")
-    updateStage("#case", state.slug, info.step, info.total);
+  // A filter can fall back to another card, so use the project actually shown.
+  renderWindowPath(
+    state.scene === "work" ? { ...state, slug: workInfo.current } : state,
+  );
+  if (state.scene === "work") updateStage(workInfo.current);
 
   if (state.terminal) drawer.open();
   else if (drawer.isOpen() && changed) drawer.close();
@@ -501,17 +458,9 @@ function transitionPairs(kind, from, to) {
       new: () => [[openerOf(from, to), "vt-window"]],
     };
   }
-  // Sideways: the card or note slides; the current step marks glide.
+  // Sideways: project to project, the card slides.
   const marks = () =>
-    to.scene === "case"
-      ? [
-          [$("#case .case-note"), "vt-slide"],
-          [$("#case-rail [aria-current]"), "vt-step"],
-          [$("#case-map [aria-current]"), "vt-mapnode"],
-        ]
-      : to.scene === "work"
-        ? [[pageBox(to, true), "vt-slide"]]
-        : [];
+    to.scene === "work" ? [[pageBox(to, true), "vt-slide"]] : [];
   if (kind.startsWith("slide")) return { old: marks, new: marks };
   // Skills category to category: the paper stays, the current tab moves.
   if (inside && to.scene === "skills") {
@@ -583,7 +532,7 @@ function handleRoute({ initial = false, force = false } = {}) {
 // The motion has finished: things that wait for a still window can appear.
 const settled = () => window.dispatchEvent(new Event("portfolio:settled"));
 
-// Sideways moves (project to project, step to step) replace the history entry,
+// Sideways moves (project to project) replace the history entry,
 // so Back leaves the scene instead of paging through every card.
 function sideways(hash) {
   go(hash, { replace: true });
@@ -591,16 +540,12 @@ function sideways(hash) {
 
 function neighbour(direction) {
   const { scene } = machine.state;
-  pendingDirection = direction;
   if (scene === "work" && workInfo.current && workInfo.slugs.length) {
+    pendingDirection = direction;
     const i =
       (workInfo.index + direction + workInfo.slugs.length) %
       workInfo.slugs.length;
     sideways(workHash(getWorkCategories(), workInfo.slugs[i]));
-  } else if (scene === "case") {
-    const n =
-      ((caseInfo.step - 1 + direction + caseInfo.total) % caseInfo.total) + 1;
-    sideways(projectHash(caseInfo.slug, n > 1 ? n : undefined));
   }
 }
 
@@ -693,7 +638,7 @@ function wireInput() {
   // Touch swipes mirror the visible buttons; they stay off the screen edges so
   // they never fight the browser's own Back swipe.
   let start = null;
-  const zone = (event) => event.target.closest?.("#work-projects, #case");
+  const zone = (event) => event.target.closest?.("#work-projects");
   document.addEventListener("pointerdown", (event) => {
     if (event.pointerType === "mouse" || !zone(event)) return;
     const edge = 28;

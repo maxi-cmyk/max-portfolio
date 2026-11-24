@@ -66,6 +66,32 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+@media (max-width: 599px) {
+  .titlebar-title {
+    padding-inline: 5px;
+  }
+  .titlebar-prefix {
+    display: none;
+  }
+}
+@media (max-width: 429px) {
+  .titlebar-title.is-long-path .titlebar-folder {
+    display: none;
+  }
+}
+@media (max-width: 374px) {
+  .titlebar {
+    gap: 6px;
+  }
+  .titlebar-title {
+    padding-inline: 3px;
+    font-size: 11px;
+  }
+  .titlebar-folder,
+  .titlebar-title.is-long-path .titlebar-suffix {
+    display: none;
+  }
+}
 /* ---------- The desktop (hub) ---------- */
 html.is-scenes,
 html.is-scenes body {

@@ -7,18 +7,32 @@ const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 
 test("every work card has a media slot that says what to supply", () => {
   for (const project of allProjects) {
-    const m = project.media;
-    assert.ok(m, project.name);
-    assert.ok(["photo", "screenshot", "video"].includes(m.kind), project.name);
-    assert.ok(m.want.length > 10, project.name);
-    assert.ok(m.src && m.alt, project.name);
+    assert.ok(project.media?.length, project.name);
+    for (const m of project.media) {
+      assert.ok(
+        ["photo", "screenshot", "video"].includes(m.kind),
+        project.name,
+      );
+      assert.ok(m.want.length > 10, project.name);
+      assert.ok(m.src && m.alt, project.name);
+    }
   }
 });
 
 test("a filled media slot has real alt text and a file that exists", () => {
   for (const project of allProjects) {
-    const m = project.media;
-    if (isWip(m.src)) continue;
+    for (const m of project.media) {
+      checkMedia(project, m);
+    }
+  }
+});
+
+function checkMedia(project, m) {
+  {
+    if (isWip(m.src)) return;
+    // A clip becomes a slide in the exhibit, so it names itself.
+    if (m.kind === "video")
+      assert.ok(m.title, `${project.name}: a clip needs a title`);
     assert.ok(!isWip(m.alt), `${project.name}: alt text is still WIP`);
     assert.match(m.src, /^\/assets\/media\//, project.name);
     assert.ok(
@@ -32,11 +46,13 @@ test("a filled media slot has real alt text and a file that exists", () => {
       );
     }
   }
-});
+}
 
 test("the static page shows a media slot only for real media, never a WIP frame", () => {
   const slots = [...html.matchAll(/<figure class="media[ "]/g)].length;
-  const real = allProjects.filter((p) => !isWip(p.media.src)).length;
+  const real = allProjects
+    .flatMap((p) => p.media)
+    .filter((m) => !isWip(m.src)).length;
   assert.equal(slots, real);
   assert.equal([...html.matchAll(/class="media media-wip"/g)].length, 0);
 });

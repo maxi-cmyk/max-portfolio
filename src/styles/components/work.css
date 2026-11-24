@@ -135,43 +135,11 @@ html:not(.is-enhanced) .case-strip {
 .case-strip-label span {
   color: var(--muted);
 }
-.case-strip-steps {
-  display: grid;
-  /* Two columns on a phone or in Work's narrow card column, more when wider. */
-  grid-template-columns: repeat(auto-fill, minmax(min(150px, 40%), 1fr));
-  gap: 0 12px;
+.case-strip-description {
+  max-width: 60ch;
   margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.case-strip-steps a {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  min-height: 36px;
-  padding: 6px 0;
   color: var(--ink);
-  font: 400 var(--step-0) / 1.35 var(--font-text);
-  text-decoration: underline;
-  text-decoration-color: transparent;
-  text-underline-offset: 3px;
-  transition: text-decoration-color 160ms ease-out;
-}
-.case-strip-steps a:hover,
-.case-strip-steps a:focus-visible {
-  color: var(--acid);
-  text-decoration-color: currentColor;
-}
-.case-strip-n {
-  display: inline-grid;
-  flex: none;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border: var(--hair);
-  background: var(--panel);
-  color: var(--ink);
-  font: 400 var(--step--1) / 1 var(--font-chrome);
+  font: var(--step-0) / 1.5 var(--font-text);
 }
 .case-strip .case-strip-open {
   display: inline-flex;
@@ -302,6 +270,19 @@ html:not(.is-enhanced) .case-strip {
   width: 100%;
   height: auto;
 }
+/* An upright phone clip is as tall as most of the window and only as wide as
+   its own shape, so it doesn't sit in a wide black box. */
+.media video {
+  background: #10141b;
+}
+.media.is-portrait {
+  width: fit-content;
+}
+.media.is-portrait video {
+  width: auto;
+  max-width: 100%;
+  height: min(70vh, 520px);
+}
 .media figcaption {
   padding: 6px 12px;
   border-top: var(--hair);
@@ -336,9 +317,6 @@ html.is-scenes #work .project-card-desc {
 html.is-scenes #work .case-strip {
   margin-bottom: 22px;
 }
-#work .case-strip-steps {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
 html.is-scenes #work .project-facts {
   grid-template-columns: 64px minmax(0, 1fr);
   gap: 8px 16px;
@@ -351,30 +329,13 @@ html.is-scenes #work .project-card-links {
   max-width: 72ch;
   margin: 6px 0 14px;
 }
-.project-specs summary {
-  padding-block: 5px;
-  color: var(--muted);
-  cursor: pointer;
-  font: var(--step--1) / 1.4 var(--font-text);
-}
 .project-specs .project-card-tags {
   margin: 8px 0 0;
-}
-html.is-scenes #work > .stage:not(.is-empty) {
-  display: flex;
-  min-width: 0;
-  margin: 12px 4px 24px;
-}
-html.is-scenes #work > .stage.is-empty {
-  display: none;
 }
 html.is-scenes #work > .statusbar {
   position: static;
 }
 @media (max-width: 699px) {
-  #work .case-strip-steps {
-    grid-template-columns: minmax(0, 1fr);
-  }
   html.is-scenes #work .project-facts {
     grid-template-columns: 56px minmax(0, 1fr);
   }
@@ -385,20 +346,11 @@ html.is-scenes #work > .statusbar {
     grid-template-rows: auto auto 1fr auto;
     gap: 0 38px;
   }
-  html.is-scenes
-    #work:not(.is-landing):has(> .stage:not(.is-empty)):not([hidden]) {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 38%);
-  }
   html.is-scenes #work > .work-controls {
     grid-area: 2 / 1;
   }
   html.is-scenes #work > #work-projects {
     grid-area: 3 / 1;
-  }
-  html.is-scenes #work > .stage:not(.is-empty) {
-    grid-area: 2 / 2 / 4;
-    align-self: start;
-    margin: 0 4px 24px;
   }
   html.is-scenes #work > .statusbar {
     grid-area: 4 / 1 / 5 / -1;

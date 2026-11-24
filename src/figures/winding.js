@@ -44,7 +44,7 @@ export function createWindingFigure(palette) {
   const signal = exampleSignal();
   const spec = spectrum(signal);
   const maxMag = Math.max(...spec);
-  const state = { bin: 3, auto: true, shown: 3, step: 1 };
+  const state = { bin: 3, auto: true, shown: 3 };
   // The wound curve sits above the spectrum so the two never overlap.
   const curve = new Group();
   curve.position.set(-0.25, 0.5, 0);
@@ -249,14 +249,6 @@ export function createWindingFigure(palette) {
         state.shown = value;
         state.auto = false;
       } else if (id === "auto") state.auto = Boolean(value);
-    },
-    setStep(step) {
-      state.step = step;
-      // Step 2 of the case study builds the input vector: bin 0 is the raw samples.
-      if (step === 2) {
-        state.auto = false;
-        state.bin = state.shown = 0;
-      } else state.auto = true;
     },
     params: () => ({ bin: Math.round(state.shown), auto: state.auto }),
     readout: () =>

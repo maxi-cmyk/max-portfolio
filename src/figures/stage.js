@@ -6,18 +6,14 @@
 // figures as you change project) and its controls arrive as events. This module
 // imports three.js and is loaded lazily.
 import { WebGLRenderer } from "three";
-import { createBoundaryFigure } from "./boundary.js";
 import { disposeFigure } from "./common.js";
 import { createOrbit, dragOrbit, stepOrbit } from "./orbit.js";
-import { createStaircaseFigure } from "./staircase.js";
 import { createTorusFigure } from "./torus.js";
 import { createWindingFigure } from "./winding.js";
 
 const FIGURES = {
   winding: createWindingFigure,
-  staircase: createStaircaseFigure,
   torus: createTorusFigure,
-  boundary: createBoundaryFigure,
 };
 const IDLE_FRAME_MS = 1000 / 30 - 2;
 
@@ -190,12 +186,6 @@ export function createStage({ mode }) {
     const factory = FIGURES[id];
     if (!factory) return null;
     const figure = factory(palette(host));
-    if (host.dataset.step) {
-      figure.setStep?.(
-        Number(host.dataset.step),
-        Number(host.dataset.stepTotal),
-      );
-    }
     return {
       id,
       host,
@@ -333,20 +323,12 @@ export function createStage({ mode }) {
     schedule();
   }
 
-  // Controls and case-study steps arrive as events from the page.
+  // Controls arrive as events from the page.
   window.addEventListener("figure:control", (event) => {
     const { host, id, value } = event.detail;
     const entry = entries.get(host);
     if (!entry) return;
     entry.figure.set?.(id, value);
-    entry.dirty = true;
-    schedule();
-  });
-  window.addEventListener("figure:step", (event) => {
-    const { host, step, total } = event.detail;
-    const entry = entries.get(host);
-    if (!entry) return;
-    entry.figure.setStep?.(step, total);
     entry.dirty = true;
     schedule();
   });

@@ -83,10 +83,6 @@ const motion = initMotion();
     module.initPopupMenus(),
   ),
 );
-// The Asteroids game loads when `play` is typed.
-window.addEventListener("portfolio:play", () =>
-  import("./components/arcade.js").then((module) => module.startGame()),
-);
 motion.register(input, startAliasTeaser);
 initLedMatrix(motion);
 document.documentElement.classList.add("is-enhanced");

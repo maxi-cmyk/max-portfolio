@@ -2,17 +2,24 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { gzipSync } from "node:zlib";
 import { certificates } from "../src/data/certificates.js";
+import cyaPredictions from "../src/data/cya-predictions.json" with { type: "json" };
 const html = readFileSync("dist/index.html", "utf8");
 const paths = new Set(
   [
     ...html.matchAll(
-      /(?:href|src|content)="(?:https:\/\/nfc-portfolio-card\.vercel\.app)?(\/assets\/[^"?#]+)"/g,
+      /(?:href|src|content|poster)="(?:https:\/\/nfc-portfolio-card\.vercel\.app)?(\/assets\/[^"?#]+)"/g,
     ),
   ].map((m) => m[1]),
 );
 for (const c of certificates) {
   paths.add(c.pdfUrl);
   paths.add(c.previewUrl);
+}
+for (const [name, { sha256 }] of Object.entries(cyaPredictions.images)) {
+  const path = `/assets/media/cya/${name}`;
+  paths.add(path);
+  if (createHash("sha256").update(readFileSync(`dist${path}`)).digest("hex") !== sha256)
+    throw new Error(`cya image changed since inference: ${path}`);
 }
 for (const path of paths) {
   const file = `dist${path}`;

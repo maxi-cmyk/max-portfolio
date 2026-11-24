@@ -7,8 +7,8 @@ for (const project of caseStudyProjects) {
   for (const field of ["role", "proof"]) {
     if (isWip(project[field])) rows.push([project.name, field]);
   }
-  if (project.media && isWip(project.media.src)) {
-    rows.push([project.name, `media (${project.media.kind})`]);
+  for (const m of project.media ?? []) {
+    if (isWip(m.src)) rows.push([project.name, `media (${m.kind})`]);
   }
   const prose = JSON.stringify(project.insights);
   if (/\bWIP\b/.test(prose)) rows.push([project.name, "case study text"]);

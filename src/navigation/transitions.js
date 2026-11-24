@@ -26,12 +26,7 @@ export function pickTransition(
       const b = order.indexOf(to.slug ?? order[0]);
       return dir(a, b, direction);
     }
-    if (to.scene === "case") {
-      if (from.slug !== to.slug) return "fade";
-      if ((from.step ?? 1) !== (to.step ?? 1)) {
-        return dir(from.step ?? 1, to.step ?? 1, direction);
-      }
-    }
+    if (to.scene === "case" && from.slug !== to.slug) return "fade";
     if (to.scene === "work") {
       const same =
         (from.categories ?? []).join() === (to.categories ?? []).join();

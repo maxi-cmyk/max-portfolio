@@ -9,6 +9,7 @@ import {
   parentScene,
   routeToScene,
   sameScene,
+  scenePath,
   sceneToHash,
 } from "../src/navigation/scenes.js";
 import { getPaletteItems, matchPalette } from "../src/navigation/palette.js";
@@ -31,19 +32,44 @@ test("every hash maps to one scene, including legacy and filtered links", () => 
   assert.equal(sceneOf("#credentials").scene, "credentials");
   assert.equal(sceneOf("#skills").scene, "skills");
   assert.equal(sceneOf("#contact").scene, "contact");
-  assert.deepEqual(sceneOf("#project/echo"), {
-    scene: "case",
-    slug: "echo",
-    step: 1,
-  });
-  assert.equal(sceneOf("#project/echo/3").step, 3);
-  // The old full write-up's links open the case study at step 1, and the
+  assert.deepEqual(sceneOf("#project/echo"), { scene: "case", slug: "echo" });
+  // Case studies were once paged: old step links open the one page, and the
   // address is rewritten to the case study's own.
+  for (const slug of ["echo", "asteroids", "cya", "sentinel"]) {
+    const canonical = projectHash(slug);
+    for (let step = 1; step <= 7; step += 1) {
+      const oldLink = `${canonical}/${step}`;
+      assert.deepEqual(sceneOf(oldLink), sceneOf(canonical));
+      assert.equal(parseRoute(oldLink).hash, canonical);
+    }
+  }
+  // So do the old full write-up's links.
   assert.deepEqual(sceneOf("#project/echo/read"), sceneOf("#project/echo"));
   assert.equal(parseRoute("#project/echo/read").hash, "#project/echo");
   assert.deepEqual(sceneOf("#nonsense"), { scene: "hub", missing: true });
   for (const hash of ["", "#home", "#work", "#skills", "#contact"]) {
     assert.ok(SCENES.includes(sceneOf(hash).scene), hash);
+  }
+});
+
+test("window paths identify the active scene, project, or category", () => {
+  const paths = {
+    "#home": "~",
+    "#work": "~/work",
+    "#work/asteroids": "~/work/asteroids",
+    "#work?categories=signals-hardware": "~/work/signals-hardware",
+    "#work?categories=signals-hardware&project=asteroids": "~/work/asteroids",
+    "#project/asteroids/5": "~/work/asteroids/case",
+    "#project/music-leds/2": "~/work/music-leds/case",
+    "#project/sentinel": "~/work/sentinel/case",
+    "#skills": "~/skills",
+    "#skills/ai": "~/skills/ai",
+    "#credentials": "~/credentials",
+    "#certificates": "~/credentials",
+    "#contact": "~/contact",
+  };
+  for (const [hash, path] of Object.entries(paths)) {
+    assert.equal(scenePath(sceneOf(hash)), path, hash);
   }
 });
 
@@ -62,7 +88,7 @@ test("a project rides along with a filter and survives a round trip", () => {
     "#work?categories=applied-ai",
     "#work?categories=signals-hardware,applied-ai&project=cya",
     "#project/music-leds",
-    "#project/music-leds/3",
+    "#project/sentinel",
     "#skills",
     "#certificates",
     "#contact",
@@ -100,13 +126,13 @@ test("up goes one level and ends at the hub", () => {
     scene: "hub",
   });
   assert.deepEqual(parentScene({ scene: "skills" }), { scene: "hub" });
-  assert.deepEqual(parentScene({ scene: "case", slug: "echo", step: 2 }), {
+  assert.deepEqual(parentScene({ scene: "case", slug: "echo" }), {
     scene: "work",
     slug: "echo",
     categories: [],
   });
   // Sentinel has a case study but is not in the pager, so up goes to the list.
-  assert.deepEqual(parentScene({ scene: "case", slug: "sentinel", step: 1 }), {
+  assert.deepEqual(parentScene({ scene: "case", slug: "sentinel" }), {
     scene: "work",
     slug: null,
     categories: [],
@@ -177,7 +203,7 @@ test("the machine reaches every scene and unsubscribes cleanly", () => {
   const off = machine.subscribe(() => calls++);
   const targets = [
     { scene: "work", slug: "echo", categories: [] },
-    { scene: "case", slug: "echo", step: 2 },
+    { scene: "case", slug: "echo" },
     { scene: "skills" },
     { scene: "credentials" },
     { scene: "contact" },

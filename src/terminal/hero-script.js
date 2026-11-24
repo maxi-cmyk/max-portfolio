@@ -47,7 +47,6 @@ const HELP = `Commands:
   cat <project>         One project: what it is, and its links
   open <name>           Open a window, or a project (e.g. open timing-attack-lab)
   led <text>            Write on the LED matrix lying on the desk
-  play                  Play Asteroids (keys or touch)
   clear                 Clear this screen
 
   flags                 6 flags are hidden on this site. Find them.
@@ -69,12 +68,6 @@ export function heroCommand(raw) {
     return resolveCommand(`sudo ${command.slice(7)}`);
   if (lower === "ll" || lower === "ls -l") return heroCommand("ls");
   if (lower === "whoami") return { kind: "about", output: WHOAMI };
-  if (lower === "play" || lower === "asteroids") {
-    return {
-      kind: "game",
-      output: "Starting Asteroids. Esc to leave.",
-    };
-  }
   if (lower === "ls") {
     return {
       kind: "help",
@@ -160,7 +153,6 @@ export function getHeroCandidates() {
       "work",
       "certs",
       "led ",
-      "play",
       "flags",
       "submit flag{",
       "hint ",

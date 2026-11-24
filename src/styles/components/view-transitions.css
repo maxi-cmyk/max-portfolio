@@ -2,9 +2,7 @@
    the old screen up while the new one comes in, so nothing goes blank. What is
    the same on both screens stays put; named parts travel:
      vt-window  a page opens out of the control that opened it, and closes back
-     vt-slide   the project card or case note slides by direction
-     vt-step    the filled step on the case rail
-     vt-mapnode the lit box on the case map
+     vt-slide   the project card slides by direction
      vt-paper   the Skills notebook page
      vt-tab     the current Skills tab
    html[data-vt] names the kind for the length of the transition. */

@@ -218,10 +218,6 @@ export const USES = {
     MediaPipe: "tracks face landmarks to estimate head tilt",
     YOLOv8: "extracts pose keypoints for the posture game",
   },
-  practice: {
-    Python: "114 of 150 algorithm problems, solved first in Python",
-    C: "the same solutions re-implemented in C",
-  },
 };
 
 // The first lines a visitor reads: the strongest evidence, each counted from
@@ -242,13 +238,11 @@ export const HEADLINES = [
 export function groupSkillUses(uses) {
   const documented = [];
   const bare = [];
-  let practice;
   for (const use of uses) {
-    if (use.project.kind === "practice") practice = use;
-    else if (use.text && !use.draft) documented.push(use);
+    if (use.text && !use.draft) documented.push(use);
     else bare.push(use);
   }
-  return { documented, bare, practice };
+  return { documented, bare };
 }
 
 export function getSkillStack() {
@@ -260,11 +254,7 @@ export function getSkillStack() {
     ...(typeof entry === "string" ? { text: entry } : entry),
   });
   const countProjects = (uses) =>
-    new Set(
-      uses
-        .filter(({ project }) => project.kind !== "practice")
-        .map(({ project }) => project.id),
-    ).size;
+    new Set(uses.map(({ project }) => project.id)).size;
   const row = (label, uses) => ({
     id: skillId(label),
     label,
@@ -296,12 +286,10 @@ export function getSkillStack() {
     };
   });
   const headlines = HEADLINES.map((h) => {
-    const backed = projects.filter(
-      (p) =>
-        p.kind !== "practice" &&
-        (h.all
-          ? h.all.every((t) => p.tags.includes(t))
-          : h.any.some((t) => p.tags.includes(t))),
+    const backed = projects.filter((p) =>
+      h.all
+        ? h.all.every((t) => p.tags.includes(t))
+        : h.any.some((t) => p.tags.includes(t)),
     );
     return {
       text: h.text,

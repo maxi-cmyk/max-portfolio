@@ -82,10 +82,13 @@ test("help lists every command the hero adds", () => {
   }
 });
 
-test("play starts the game, and help says so", () => {
-  assert.equal(heroCommand("play").kind, "game");
-  assert.equal(heroCommand("asteroids").kind, "game");
-  assert.match(heroCommand("help").output, /play\s+Play Asteroids/);
+test("the arcade commands are gone and the Asteroids project still opens", () => {
+  for (const command of ["play", "asteroids"]) {
+    assert.equal(heroCommand(command).kind, "error");
+    assert.ok(!getHeroCandidates().includes(command));
+  }
+  assert.doesNotMatch(heroCommand("help").output, /^\s*play\b/m);
+  assert.equal(heroCommand("open asteroids").navTarget, "#work/asteroids");
 });
 
 test("tab completion knows the hero's words and the project names", () => {

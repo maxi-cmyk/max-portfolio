@@ -30,15 +30,12 @@ test("skill pages count distinct projects and show short evidence notes", () => 
   for (const category of getSkillStack().categories) {
     const projectIds = new Set();
     for (const row of category.rows) {
-      const projects = row.uses.filter(
-        ({ project }) => project.kind !== "practice",
-      );
       assert.equal(
         row.count,
-        new Set(projects.map(({ project }) => project.id)).size,
+        new Set(row.uses.map(({ project }) => project.id)).size,
       );
       for (const use of row.uses) {
-        if (use.project.kind !== "practice") projectIds.add(use.project.id);
+        projectIds.add(use.project.id);
         assert.ok(use.text, `${use.project.id} / ${row.label} has no phrase`);
         assert.ok(use.text.split(/\s+/).length <= 12, use.text);
       }

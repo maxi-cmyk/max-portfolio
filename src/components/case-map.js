@@ -1,9 +1,9 @@
-// A small drawn map of a project's case study: the lifecycle, the two
-// analysis lanes, the frame loop or the two-device sequence, with the current
-// step lit. Numbers match the step rail (the Overview is step 1). Algorithm
-// projects have their own 3D figure, so their flow diagram shows on the
-// Overview only. Step 0 lights nothing (the static page). Pure: returns HTML,
-// so the static page can use it too.
+// The drawn diagram that carries each one-page case study: a flowchart, a
+// chain that splits into outputs, two builds or two comparisons side by side,
+// an upload that splits into two analyses, or events across devices. Each
+// layout has its own shape below. `level` 0 is the static page, whose
+// headings sit one level lower. Pure: returns HTML, so the static page can
+// use it too.
 
 const esc = (value) =>
   String(value)
@@ -11,67 +11,133 @@ const esc = (value) =>
     .replace(/</g, "&lt;")
     .replace(/"/g, "&quot;");
 
-// One box; `n` is its step number in the case study.
-function node(n, step, label, { detail, tag, cls = "", style = "" } = {}) {
-  const current = n === step;
-  return `<li class="case-map-node${cls}${current ? " is-current" : ""}"${style ? ` style="${style}"` : ""}${current ? ' aria-current="step"' : ""}>${n ? `<span class="case-map-n" aria-hidden="true">${n}</span>` : ""}<b>${esc(label)}</b>${detail ? `<span>${esc(detail)}</span>` : ""}${tag ? `<small>${esc(tag)}</small>` : ""}</li>`;
+// One box: a label over a detail line.
+function node(label, { detail, cls = "", style = "", led } = {}) {
+  const swatch = led
+    ? `<i class="led led-${esc(led)}" aria-hidden="true"></i>`
+    : "";
+  return `<li class="case-map-node${cls}"${style ? ` style="${style}"` : ""}><b>${swatch}${esc(label)}</b>${detail ? `<span>${esc(detail)}</span>` : ""}</li>`;
 }
 
-const figure = (kind, caption, inner) =>
-  `<figure class="case-map case-map--${kind}">${inner}<figcaption>${esc(caption)}</figcaption></figure>`;
+// A diagram, then what follows it, with no blank lines between.
+const page = (...parts) => parts.filter(Boolean).join("\n  ");
 
-function flow({ label, nodes }) {
-  return figure(
-    "flow",
-    label,
-    `<ol class="case-map-chain">${nodes.map((n) => node(0, -1, n.label, { detail: n.detail })).join("")}</ol>`,
+// The short notes under a diagram.
+function after(notes, level) {
+  if (!notes) return "";
+  const heading = level === 0 ? "h4" : "h3";
+  return `<section class="case-after-flow">
+    <${heading}>${esc(notes.title)}</${heading}>
+    ${notes.paragraphs.map((paragraph) => `<p>${esc(paragraph)}</p>`).join("")}
+  </section>`;
+}
+
+function flowchart(
+  { title, intake, decision, pending, approved, after: notes },
+  level,
+) {
+  return page(
+    `<figure class="case-map case-map--branching case-map--decision">
+    <figcaption>${esc(title)}</figcaption>
+    <ol class="case-map-intake" role="list">
+      ${intake.map(({ label, detail }) => node(label, { detail })).join("")}
+      <li>
+        <b class="case-map-root">${esc(decision)}</b>
+        <ol class="case-map-outcomes" role="list">
+          ${node(pending.label, { detail: pending.detail, cls: " is-pending" })}
+          ${node(approved.label, { detail: approved.detail, cls: " is-approved" })}
+        </ol>
+      </li>
+    </ol>
+  </figure>`,
+    after(notes, level),
   );
 }
 
-function lifecycle({ title, steps }, step) {
-  return figure(
-    "lifecycle",
-    title,
-    `<ol class="case-map-chain">${steps
-      .map((s, i) =>
-        node(i + 2, step, s.title, {
-          cls: s.state === "gate" ? " is-gate" : "",
-          tag: s.state === "gate" ? "approval gate" : "",
-        }),
+function platforms({ title, engine, builds, note }) {
+  return `<figure class="case-map case-map--branching case-map--platforms">
+    <figcaption>${esc(title)}</figcaption>
+    <div class="case-map-root"><b>${esc(engine.label)}</b><span>${esc(engine.detail)}</span></div>
+    <ul class="case-map-outcomes" role="list">${builds
+      .map(
+        ({ label, input, output, timing }) => `<li class="case-map-node">
+          <b>${esc(label)}</b>
+          <dl>
+            <div><dt>Input</dt><dd>${esc(input)}</dd></div>
+            <div><dt>Output</dt><dd>${esc(output)}</dd></div>
+          </dl>
+          <p class="case-map-timing">${esc(timing)}</p>
+        </li>`,
       )
-      .join("")}</ol>`,
+      .join("")}</ul>
+  </figure>
+  <p class="case-map-footnote">${esc(note)}</p>`;
+}
+
+// Stages in a column, then a bar that splits into outputs (music_LEDs'
+// colour bands, Conway's two displays), an optional results table, then notes.
+function signalChain(
+  { title, stages, output, outputs, results, after: notes },
+  level,
+) {
+  const split = outputs?.length
+    ? `<ol class="case-map-outcomes" role="list" style="--outputs:${outputs.length}">${outputs
+        .map(({ label, detail, led }) => node(label, { detail, led }))
+        .join("")}</ol>`
+    : "";
+  return page(
+    `<figure class="case-map case-map--branching case-map--signal">
+    <figcaption>${esc(title)}</figcaption>
+    <ol class="case-map-intake" role="list">
+      ${stages.map(({ label, detail }) => node(label, { detail })).join("")}
+      <li>
+        <div class="case-map-root"><b>${esc(output.label)}</b><span>${esc(output.detail)}</span></div>${split}
+      </li>
+    </ol>
+  </figure>`,
+    results && renderTable(results),
+    after(notes, level),
   );
 }
 
-function pipeline({ title, source, lanes, merge }, step) {
-  const lane = (l, i) => {
-    const n = i + 3;
-    const current = n === step;
-    return `<li class="case-map-lane${current ? " is-current" : ""}"${current ? ' aria-current="step"' : ""}><b><span class="case-map-n" aria-hidden="true">${n}</span>${esc(l.label)}</b><ol>${l.steps.map((s) => `<li>${esc(s)}</li>`).join("")}</ol></li>`;
-  };
-  return figure(
-    "pipeline",
-    title,
-    `<ol class="case-map-chain">${node(2, step, source.label)}<li class="case-map-split"><ol class="case-map-lanes">${lanes.map(lane).join("")}</ol></li>${node(lanes.length + 3, step, merge.label)}</ol>`,
-  );
-}
-
-function frameLoop({ title, budget, phases, after }, step) {
-  return figure(
-    "loop",
-    title,
-    `<p class="case-map-tick">Every ${esc(budget)}</p><ol class="case-map-chain case-map-ring">${phases
-      .map((p, i) =>
-        node(i + 2, step, p.label, {
-          cls: p.core ? " is-core" : "",
-          tag: p.core ? "shared core" : "platform",
-        }),
+// One root, then two boxes side by side, each with labelled rows and a note
+// (the timing lab's two comparisons).
+function compare({ title, root, branches, after: notes }, level) {
+  return page(
+    `<figure class="case-map case-map--branching case-map--platforms case-map--compare">
+    <figcaption>${esc(title)}</figcaption>
+    <div class="case-map-root"><b>${esc(root.label)}</b><span>${esc(root.detail)}</span></div>
+    <ul class="case-map-outcomes" role="list">${branches
+      .map(
+        ({ label, rows, note }) => `<li class="case-map-node">
+          <b>${esc(label)}</b>
+          <dl>${rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>
+          <p class="case-map-timing">${esc(note)}</p>
+        </li>`,
       )
-      .join("")}</ol><ol class="case-map-chain case-map-after">${node(phases.length + 2, step, after.label)}</ol>`,
+      .join("")}</ul>
+  </figure>`,
+    after(notes, level),
   );
 }
 
-function eventSequence({ title, devices, steps }, step) {
+// One upload, two analyses side by side, one merge (it'sPEAK).
+function pipeline({ title, source, lanes, merge, after: notes }, level) {
+  return page(
+    `<figure class="case-map case-map--branching case-map--pipeline">
+    <figcaption>${esc(title)}</figcaption>
+    <div class="case-map-root"><b>${esc(source.label)}</b><span>${esc(source.detail)}</span></div>
+    <ol class="case-map-outcomes" role="list">${lanes
+      .map(({ label, detail }) => node(label, { detail }))
+      .join("")}</ol>
+    <div class="case-map-root case-map-merge"><b>${esc(merge.label)}</b><span>${esc(merge.detail)}</span></div>
+  </figure>`,
+    after(notes, level),
+  );
+}
+
+// Events in order, one column per device (Sentinel).
+function eventSequence({ title, devices, steps, after: notes }, level) {
   // Lanes in order of first appearance: the sensor, the bridge, the camera.
   const lanes = [];
   for (const s of steps) {
@@ -81,46 +147,53 @@ function eventSequence({ title, devices, steps }, step) {
     }
   }
   const column = (actor) => lanes.findIndex((l) => l.id === actor) + 1;
-  return figure(
-    "lanes",
-    title,
-    `<div class="case-map-grid" style="--lanes:${lanes.length}"><div class="case-map-heads" aria-hidden="true">${lanes.map((l) => `<span>${esc(l.label)}</span>`).join("")}</div><ol class="case-map-chain">${steps
+  return page(
+    `<figure class="case-map case-map--lanes">
+    <figcaption>${esc(title)}</figcaption>
+    <div class="case-map-grid" style="--lanes:${lanes.length}"><div class="case-map-heads" aria-hidden="true">${lanes.map((l) => `<span>${esc(l.label)}</span>`).join("")}</div><ol class="case-map-chain">${steps
       .map((s, i) =>
-        node(i + 2, step, s.title, {
+        node(s.title, {
+          detail: s.body,
           style: `grid-area:${i + 1} / ${column(s.actor)}`,
-          tag: lanes[column(s.actor) - 1].label,
-        }),
+        }).replace(
+          "<b>",
+          `<b><small>${esc(lanes[column(s.actor) - 1].label)}: </small>`,
+        ),
       )
-      .join("")}</ol></div>`,
+      .join("")}</ol></div>
+  </figure>`,
+    after(notes, level),
   );
 }
 
-export function renderCaseMap(insights = {}, step = 1) {
+export function renderCaseMap(insights = {}, level = 1) {
   switch (insights.layout) {
-    case "algorithm":
-      return step <= 1 && insights.diagram ? flow(insights.diagram) : "";
-    case "lifecycle":
-      return insights.lifecycle ? lifecycle(insights.lifecycle, step) : "";
+    case "flowchart":
+      return insights.flowchart ? flowchart(insights.flowchart, level) : "";
+    case "platforms":
+      return insights.platforms ? platforms(insights.platforms) : "";
+    case "signal-chain":
+      return insights.signalChain
+        ? signalChain(insights.signalChain, level)
+        : "";
+    case "compare":
+      return insights.compare ? compare(insights.compare, level) : "";
     case "pipeline":
-      return insights.pipeline ? pipeline(insights.pipeline, step) : "";
-    case "frame-loop":
-      return insights.frameLoop ? frameLoop(insights.frameLoop, step) : "";
+      return insights.pipeline ? pipeline(insights.pipeline, level) : "";
     case "event-sequence":
       return insights.eventSequence
-        ? eventSequence(insights.eventSequence, step)
+        ? eventSequence(insights.eventSequence, level)
         : "";
     default:
       return "";
   }
 }
 
-// A step's table: a caption, column headers, and the first cell of each row as
-// its header. Wide tables scroll inside their own labelled box.
-export function renderStepTable(table) {
+// A results table: a caption, column headers, and the first cell of each row
+// as its header. Wide tables scroll inside their own labelled box.
+export function renderTable(table) {
   if (!table) return "";
-  const head = table.head
-    .map((h) => `<th scope="col">${esc(h)}</th>`)
-    .join("");
+  const head = table.head.map((h) => `<th scope="col">${esc(h)}</th>`).join("");
   const rows = table.rows
     .map(
       ([first, ...rest]) =>

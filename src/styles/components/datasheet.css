@@ -29,7 +29,7 @@
   margin: 0;
   color: var(--ink);
 }
-.sheet .led {
+:is(.sheet, .case-map) .led {
   display: inline-block;
   width: 8px;
   height: 8px;
@@ -37,13 +37,13 @@
   background: var(--c);
   box-shadow: 0 0 6px var(--c);
 }
-.sheet .led-r {
+:is(.sheet, .case-map) .led-r {
   --c: var(--led-r);
 }
-.sheet .led-g {
+:is(.sheet, .case-map) .led-g {
   --c: var(--led-g);
 }
-.sheet .led-b {
+:is(.sheet, .case-map) .led-b {
   --c: var(--led-b);
 }
 .sheet-bar {

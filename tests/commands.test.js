@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { resolveCommand } from "../src/terminal/commands/index.js";
+import { BANDS } from "../src/figures/winding-math.js";
 import { projectsCommand } from "../src/terminal/commands/project.js";
 import { certificates } from "../src/data/certificates.js";
 import {
@@ -11,10 +12,7 @@ import {
   isWip,
   resolveCategory,
 } from "../src/data/projects.js";
-import {
-  getCaseStudySteps,
-  getCaseStudyView,
-} from "../src/data/case-study-steps.js";
+import { renderCaseMap } from "../src/components/case-map.js";
 import {
   focusTechnologyGroups,
   formatFocusToolsForTerminal,
@@ -24,6 +22,19 @@ import {
 test("certificate entries point to public PDF and preview assets", () => {
   assert.deepEqual(certificates, [
     {
+      title: "Second place, SMU .Hack Enrichment Application Programme 2026",
+      issuer: "SMU .Hack · with Huawei",
+      issued: "Summer 2026",
+      summary:
+        "Second place out of 15 teams, with it'sPEAK: a coach that scores a presentation rehearsal.",
+      pdfUrl: "/assets/HEAP26-second-place.pdf",
+      previewUrl: "/assets/HEAP26-second-place-preview.webp",
+      previewWidth: 1400,
+      previewHeight: 972,
+      previewAlt:
+        "Certificate of Achievement, Second Place: awarded for achieving 2nd place out of 15 teams in SMU .Hack Enrichment Application Programme 2026",
+    },
+    {
       title: "Google AI Professional Certificate",
       issuer: "Google · Coursera",
       issued: "June 2026",
@@ -31,6 +42,8 @@ test("certificate entries point to public PDF and preview assets", () => {
         "A seven-course professional certificate covering practical AI use across research, writing, content creation, data analysis, and app building.",
       pdfUrl: "/assets/AI-professional.pdf",
       previewUrl: "/assets/AI-professional-preview.webp",
+      previewWidth: 1400,
+      previewHeight: 1082,
       previewAlt:
         "Google AI Professional Certificate awarded to Max Leong on June 22, 2026",
     },
@@ -266,7 +279,7 @@ test("every project publishes a visitor-facing case study", () => {
       "view case study",
       project.name,
     );
-    // The old full write-up's sections now live in the steps.
+    // The old full write-up's sections are gone; each case study is one page.
     assert.equal("sections" in project.insights, false, project.name);
     assert.equal("contentOrder" in project.insights, false, project.name);
     assert.equal("status" in project.insights, false, project.name);
@@ -290,16 +303,26 @@ test("case studies define project-specific narrative structures", () => {
     (project) => project.slug === "sentinel",
   );
 
-  assert.equal(conway.insights.howItWorks.steps.length, 4);
-  assert.match(conway.insights.howItWorks.steps[0].body, /torus/i);
+  // Conway: one generation, then the LEDs and the dashboard. The board is a
+  // flat matrix whose edges wrap; "torus" is only the figure's render.
+  assert.deepEqual(
+    conway.insights.signalChain.stages.map(({ label }) => label),
+    ["Wrap", "Read", "Decide", "Commit"],
+  );
+  assert.doesNotMatch(JSON.stringify(conway.insights), /torus/i);
+  assert.match(conway.hook, /32×8 LED matrix/);
   assert.equal(itspeak.insights.pipeline.lanes.length, 2);
   assert.match(itspeak.insights.pipeline.merge.detail, /deterministic/i);
-  assert.equal(echo.insights.lifecycle.steps.length, 6);
-  assert.equal(echo.insights.lifecycle.steps[2].state, "gate");
-  assert.equal(asteroids.insights.frameLoop.budget, "20 ms");
+  assert.match(echo.insights.flowchart.pending.detail, /stays out of the feed/);
+  // One engine, then a lane per machine, matching the repository's loops.
+  assert.deepEqual(
+    asteroids.insights.platforms.builds.map(({ label }) => label),
+    ["ESP32 handheld", "Browser · WebAssembly"],
+  );
+  assert.match(asteroids.insights.platforms.engine.detail, /20 ms/);
   assert.match(
-    asteroids.insights.frameLoop.phases.map(({ detail }) => detail).join(" "),
-    /capped object pools.*framebuffer.*LEDC/s,
+    asteroids.insights.platforms.builds[1].timing,
+    /animation frames.*20 ms ticks.*scene/,
   );
   assert.deepEqual(
     sentinel.insights.eventSequence.devices.map(({ id }) => id),
@@ -307,11 +330,11 @@ test("case studies define project-specific narrative structures", () => {
   );
   assert.deepEqual(
     sentinel.insights.eventSequence.steps.map(({ actor }) => actor),
-    ["sensor", "bridge", "camera", "camera", "camera"],
+    ["sensor", "bridge", "camera", "camera"],
   );
   assert.deepEqual(
     sentinel.insights.eventSequence.steps.map(({ actorLabel }) => actorLabel),
-    ["PIR node", "Blynk V6", "ESP32-CAM", "ESP32-CAM", "ESP32-CAM"],
+    ["PIR node", "Blynk V6", "ESP32-CAM", "ESP32-CAM"],
   );
 });
 
@@ -354,10 +377,22 @@ test("music_LEDs explains Fourier and linear algebra without obsolete Spotify fe
   const music = caseStudyProjects.find(({ slug }) => slug === "music-leds");
   const copy = JSON.stringify(music);
   assert.match(copy, /Fourier.matrix/i);
-  assert.match(copy, /inner product/i);
-  assert.match(copy, /reconstruct/i);
+  assert.match(copy, /direct DFT/);
   assert.match(copy, /radix-2 FFT/);
   assert.doesNotMatch(copy, /spotify|album art|now-playing/i);
+  // One page: sound, clean-up, FFT, then the LED's bands.
+  const chain = music.insights.signalChain;
+  assert.deepEqual(
+    chain.stages.map(({ label }) => label),
+    ["Microphone", "Clean up", "FFT"],
+  );
+  assert.deepEqual(
+    chain.outputs.map(({ led, detail }) => [led, detail]),
+    Object.values(BANDS).map(([low, high], i) => [
+      "rgb"[i],
+      `${low}–${high} Hz`,
+    ]),
+  );
 });
 
 test("cya qualifies evaluation results and attributes the team contribution", () => {
@@ -435,12 +470,12 @@ test("retired category names still work in the terminal", () => {
   assert.equal(resolveCategory("constructor"), undefined);
 });
 
-test("every work card has a one-sentence hook with a distinct opening", () => {
+test("every work card has a short one-sentence hook with a distinct opening", () => {
   const openings = new Set();
   for (const project of allProjects) {
     const words = project.hook.trim().split(/\s+/);
     assert.ok(
-      words.length >= 15 && words.length <= 30,
+      words.length >= 8 && words.length <= 20,
       `${project.name}: ${words.length} words`,
     );
     assert.match(project.hook, /[.?]$/, project.name);
@@ -457,8 +492,10 @@ test("missing facts are explicit WIP placeholders, never invented", () => {
   );
   assert.equal(isWip(timing.role), true);
   assert.equal(isWip(timing.proof), true);
-  const last = getCaseStudyView(timing.insights).at(-1);
-  assert.match(last.more.at(-1), /^Results: WIP/);
+  assert.match(
+    timing.insights.compare.after.paragraphs.at(-1),
+    /^Results: WIP/,
+  );
   for (const project of allProjects) {
     assert.equal(typeof project.role, "string", project.name);
     assert.equal(typeof project.proof, "string", project.name);
@@ -469,42 +506,30 @@ test("missing facts are explicit WIP placeholders, never invented", () => {
   }
 });
 
-test("every case study can be read as short steps", () => {
+test("every case study is one short page", () => {
   const words = (text = "") => text.split(/\s+/).filter(Boolean).length;
   for (const project of caseStudyProjects) {
-    const view = getCaseStudyView(project.insights);
-    const steps = getCaseStudySteps(project.insights);
-    assert.ok(steps.length >= 3, `${project.name}: ${steps.length} steps`);
-    // Seven numbered steps is what the step rail fits on a phone.
-    assert.ok(view.length <= 7, `${project.name}: ${view.length} steps`);
-    // Algorithm projects show their map on the overview only; the rest draw
-    // it beside every step.
-    const mapped = project.insights.layout !== "algorithm";
-    for (const step of view) {
-      assert.ok(step.title && step.body, project.name);
-      assert.ok(
-        words(step.body) <= 60,
-        `${project.name}: ${step.title} lead is too long`,
-      );
-      const total = words(step.body) + words((step.more ?? []).join(" "));
-      assert.ok(
-        total >= 25 || step.code || step.table || mapped,
-        `${project.name}: ${step.title} is a lone sentence`,
-      );
-    }
+    const { summary } = project.insights;
+    assert.ok(words(summary) <= 30, `${project.name}: summary is too long`);
+    const page = `${summary} ${renderCaseMap(project.insights)}`
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ");
+    // About 1,000 characters; cya keeps its caveats and credits.
+    assert.ok(
+      page.length <= 1200,
+      `${project.name}: ${page.length} characters`,
+    );
   }
-  assert.deepEqual(getCaseStudySteps({ layout: "unknown" }), []);
 });
 
 test("Asteroids reflects the shared C++/WASM game and keeps browser additions scoped", () => {
   const asteroids = caseStudyProjects.find(({ slug }) => slug === "asteroids");
   assert.match(asteroids.description, /WebAssembly/);
-  assert.match(asteroids.description, /Two versions/);
-  assert.match(asteroids.description, /PS4 controller or keyboard and mouse/);
+  assert.match(asteroids.description, /ESP32/);
   assert.ok(asteroids.description.split(/\s+/).length <= 30);
   const copy = JSON.stringify(asteroids);
   assert.match(copy, /top five/);
-  assert.match(copy, /browser-specific/);
-  assert.match(copy, /practice mode/);
+  assert.match(copy, /PS4 controller or keyboard and mouse/);
+  assert.match(copy, /its own local leaderboard/);
   assert.doesNotMatch(copy, /five stages|top-10|saucers|time limit/i);
 });

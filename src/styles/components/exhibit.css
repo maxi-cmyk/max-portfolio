@@ -1,0 +1,441 @@
+/* The Work window's exhibit (components/exhibit.js): a project's clips and its
+   3D figure as slides in one pencil-framed panel. It sits in the open
+   project's card: straight after the one-line summary on phones and tablets,
+   and as the card's right column on a laptop. */
+
+/* ---------- Where it sits ---------- */
+html.is-scenes #work .full-project-card {
+  display: flex;
+  flex-direction: column;
+  /* The slides' track is as wide as all its slides; the card is not. */
+  min-width: 0;
+}
+/* The card's own parts join the column so the exhibit can come second. */
+html.is-scenes #work .project-main {
+  display: contents;
+}
+html.is-scenes #work .project-main > * {
+  order: 2;
+}
+html.is-scenes
+  #work
+  .project-main
+  > :is(.project-card-header, .project-card-desc) {
+  order: 0;
+}
+html.is-scenes #work .project-exhibit {
+  order: 1;
+  min-width: 0;
+}
+html.is-scenes #work .project-exhibit:empty {
+  display: none;
+}
+/* The card's clips are slides now; without JavaScript they stay in the card. */
+html.is-scenes #work .project-main > .media {
+  display: none;
+}
+@media (min-width: 1000px) {
+  html.is-scenes #work .full-project-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 41%);
+    column-gap: 40px;
+    align-items: start;
+  }
+  html.is-scenes #work .project-main {
+    display: block;
+  }
+  /* The panel stays in view while the notes beside it scroll. */
+  html.is-scenes #work .project-exhibit {
+    position: sticky;
+    top: 44px;
+  }
+}
+
+/* ---------- The panel ---------- */
+html.is-scenes #work .exhibit {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 8px 4px 24px;
+  background: var(--sheet);
+}
+html.is-scenes #work .exhibit.is-empty {
+  display: none;
+}
+@media (min-width: 1000px) {
+  html.is-scenes #work .exhibit {
+    margin: 8px 4px 24px 0;
+  }
+}
+#work .exhibit .stage-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 6px 8px 0 14px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: var(--step--1) / 1.35 var(--font-chrome);
+  letter-spacing: normal;
+  text-transform: none;
+}
+#work .exhibit .stage-bar span {
+  padding: 0;
+  background: none;
+}
+#work .exhibit [data-stage-title] {
+  min-width: 0;
+  color: var(--ink);
+}
+.exhibit-nav {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+}
+.exhibit-nav[hidden] {
+  display: none;
+}
+#work .exhibit .exhibit-count {
+  margin-right: 4px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+/* Small push buttons, like the site's others: a hard shadow that presses in. */
+.exhibit-arrow {
+  display: grid;
+  width: 34px;
+  height: 30px;
+  padding: 0 0 2px;
+  place-items: center;
+  border: 1.5px solid var(--ink);
+  border-radius: 6px;
+  background: var(--panel);
+  box-shadow: 2px 2px 0 var(--ink);
+  color: var(--ink);
+  cursor: pointer;
+  font: 400 22px / 1 var(--font-chrome);
+}
+.exhibit-arrow:hover,
+.exhibit-arrow:focus-visible {
+  background: var(--navy);
+  color: var(--panel);
+}
+.exhibit-arrow:active {
+  box-shadow: none;
+  translate: 2px 2px;
+}
+.exhibit-arrow[aria-disabled="true"] {
+  border-color: #34332f55;
+  background: var(--panel);
+  box-shadow: none;
+  color: #34332f66;
+  cursor: default;
+}
+
+/* ---------- Slides ---------- */
+.exhibit-track {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.exhibit-track::-webkit-scrollbar {
+  display: none;
+}
+.exhibit-slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+.exhibit-slide[hidden] {
+  display: none;
+}
+html.is-scenes #work .exhibit .figure-host {
+  height: clamp(210px, 25vw, 280px);
+}
+.exhibit-slide.is-clip {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px 14px;
+}
+/* The clip's screen: dark, the clip's own shape, an upright phone clip
+   centred at a fixed height. */
+.exhibit-screen {
+  overflow: hidden;
+  border: 1.2px solid var(--ink);
+  background: #10141b;
+}
+.exhibit-screen.is-portrait {
+  height: clamp(320px, 52vh, 460px);
+}
+.exhibit-screen video,
+.exhibit-screen img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+#work .exhibit .is-clip .figure-caption {
+  margin: 0;
+  color: var(--muted);
+  font: var(--step--1) / 1.5 var(--font-text);
+}
+
+/* ---------- Dots ---------- */
+.exhibit-dots {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  padding: 0 0 8px;
+}
+.exhibit-dots[hidden] {
+  display: none;
+}
+.exhibit-dots button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.exhibit-dots button::before {
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+  content: "";
+}
+.exhibit-dots button[aria-current="true"]::before {
+  border-color: var(--navy);
+  background: var(--navy);
+}
+.exhibit-dots button:focus-visible {
+  outline: 2px solid var(--acid);
+  outline-offset: -2px;
+}
+
+@media (max-width: 699px) {
+  .exhibit-screen.is-portrait {
+    height: clamp(300px, 58vh, 440px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .exhibit-track {
+    scroll-behavior: auto;
+  }
+}
+
+/* ---------- Figures drawn without 3D (figures/panels.js) ---------- */
+/* A panel stands in for the 3D host, and shows even where 3D is off. */
+.figure-frame.is-panel .figure-host {
+  display: none;
+}
+html.is-scenes #work .exhibit:has(.figure-frame.is-panel) .figure-frame {
+  display: block;
+}
+html.is-scenes
+  #work
+  .exhibit:has(.figure-frame.is-panel)
+  .figure-controls:not([hidden]) {
+  display: flex;
+}
+html.is-scenes #work .exhibit:has(.figure-frame.is-panel) .figure-readout {
+  display: block;
+}
+.figure-frame.is-panel {
+  justify-self: stretch;
+  width: 100%;
+}
+
+/* Timing attack: a short terminal session on the console's paper. */
+.tt {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: clamp(250px, 30vw, 300px);
+  padding: 10px 12px;
+  overflow: hidden;
+  border: var(--hair);
+  background: #e7e6df;
+  color: var(--ink);
+  font: var(--step--1) / 1.55 var(--font-code);
+  /* Lines leaving the top fade instead of being cut. */
+  mask-image: linear-gradient(to bottom, transparent, #000 28px);
+}
+/* Under reduced motion the whole session shows at once, uncut. */
+.tt.is-static {
+  height: auto;
+  mask-image: none;
+}
+.tt-line {
+  flex: none;
+  white-space: pre-wrap;
+}
+.tt-line.is-guess {
+  display: grid;
+  grid-template-columns: 12ch 7ch minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+.tt-cmd,
+.tt-ms {
+  white-space: pre;
+}
+.tt-cmd b {
+  color: var(--navy);
+  font-weight: 600;
+}
+.tt-ms {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.tt-bar {
+  width: var(--w, 0%);
+  height: 6px;
+  background: var(--lead);
+  transition: width 360ms ease-out;
+}
+.tt-line.is-slowest.has-reply :is(.tt-ms, .tt-cmd b) {
+  color: var(--warm);
+}
+.tt-line.is-slowest.has-reply .tt-bar {
+  background: var(--warm);
+}
+.tt-line.is-head {
+  margin-top: 4px;
+  color: var(--muted);
+}
+.tt-line.is-keep,
+.tt-line.is-flat {
+  color: var(--navy);
+}
+.tt-line.is-done {
+  color: var(--warm);
+  font-weight: 600;
+}
+
+/* cya: known image sources, recorded predictions, and fixed test edits. */
+.rb,
+.rb-static {
+  display: grid;
+  gap: 10px;
+}
+.rb-static {
+  max-width: 46rem;
+  margin: 16px 0;
+}
+.rb-samples {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.rb-sample {
+  min-width: 0;
+  margin: 0;
+  border: var(--hair);
+  background: var(--sheet);
+}
+.rb-sample img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 2;
+}
+.rb-sample figcaption {
+  padding: 8px;
+  color: var(--ink);
+  font: var(--step-0) / 1.4 var(--font-text);
+}
+.rb-sample figcaption > b {
+  color: var(--navy);
+}
+.rb-comparison .rb-phase {
+  display: block;
+  margin-bottom: 3px;
+}
+.rb-playback .rb-sample figcaption {
+  min-block-size: 7.5rem;
+}
+.rb-prediction {
+  margin: 3px 0 0;
+}
+.rb-miss {
+  display: block;
+  color: var(--warm);
+  font-weight: 700;
+}
+.rb-note,
+.rb-score {
+  margin: 0;
+  color: var(--muted);
+  font: var(--step--1) / 1.45 var(--font-text);
+}
+.rb-score {
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.rb-progress {
+  display: block;
+  width: 100%;
+  height: 7px;
+  appearance: none;
+  border: 1px solid var(--lead);
+  border-radius: 2px;
+  background: var(--bg);
+}
+.rb-progress::-webkit-progress-bar {
+  background: var(--bg);
+}
+.rb-progress::-webkit-progress-value {
+  background: var(--navy);
+}
+.rb-progress::-moz-progress-bar {
+  background: var(--navy);
+}
+.rb-playback-bar {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.rb-phase {
+  color: var(--navy);
+  font: var(--step-0) / 1.3 var(--font-chrome);
+}
+.rb-playback-bar .push {
+  flex-shrink: 0;
+  min-width: 72px;
+  min-height: 44px;
+  padding: 6px 8px;
+  font-size: var(--step--1);
+}
+.rb-playback-bar .push:focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: 2px;
+}
+#work .exhibit:has(.rb) .figure-readout:empty {
+  display: none;
+}
+@media (max-width: 699px) {
+  .rb-samples {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .rb-playback .rb-sample figcaption {
+    min-block-size: 6.3rem;
+  }
+  .rb-playback[data-active-sample="photo"] [data-cya-sample="generated"],
+  .rb-playback[data-active-sample="generated"] [data-cya-sample="photo"] {
+    display: none;
+  }
+}

@@ -69,14 +69,12 @@ html.is-scenes #contact .contact-card .push::before {
 }
 .pk-btn,
 html.is-scenes .case-strip .case-strip-open,
-html.is-scenes #work > .statusbar #work-next,
-html.is-scenes #case .statusbar .push[aria-label="Next step"] {
+html.is-scenes #work > .statusbar #work-next {
   color: var(--panel);
 }
 .pk-btn::before,
 html.is-scenes .case-strip .case-strip-open::before,
-html.is-scenes #work > .statusbar #work-next::before,
-html.is-scenes #case .statusbar .push[aria-label="Next step"]::before {
+html.is-scenes #work > .statusbar #work-next::before {
   background: var(--navy)
     repeating-linear-gradient(-35deg, #ffffff22 0 1px, transparent 1px 3.5px);
 }
@@ -94,7 +92,7 @@ html.is-scenes #contact .contact-card .push:focus-visible {
 html.is-scenes
   :is(#work, #case)
   .statusbar
-  .push:not(#work-next):not([aria-label="Next step"]):hover,
+  .push:not(#work-next):hover,
 html.is-scenes #contact .contact-card .push:hover {
   color: var(--ink);
 }
@@ -274,14 +272,9 @@ html.is-scenes .case-strip {
   box-shadow: none;
   rotate: 0.3deg;
 }
-/* One rule per line, including labels that wrap in either column. */
+/* The label sits on the paper ruling. */
 html.is-scenes .case-strip-label {
   line-height: 22px;
-}
-html.is-scenes .case-strip-steps a {
-  min-height: var(--paper-line);
-  padding-block: 0;
-  line-height: var(--paper-line);
 }
 html.is-scenes .case-strip::before {
   position: absolute;
@@ -303,15 +296,6 @@ html.is-scenes .case-strip::after {
   content: "";
   rotate: -3deg;
   translate: -50% 0;
-}
-html.is-scenes .case-strip-n {
-  width: 22px;
-  height: 22px;
-  margin-top: calc((var(--paper-line) - 22px) / 2);
-  border: 1.6px solid var(--lead);
-  border-radius: 50%;
-  background: none;
-  filter: url(#pencil-rough);
 }
 html.is-scenes .project-facts dt {
   color: var(--warm);
@@ -362,35 +346,6 @@ html.is-scenes .stage::after {
 }
 
 /* ---------- Case-study sheets ---------- */
-.case-rail a {
-  isolation: isolate;
-}
-.case-rail a::before {
-  inset: 0;
-  z-index: -1;
-  border: 1.8px solid var(--lead);
-  border-radius: 50%;
-  background: var(--sheet);
-  filter: url(#pencil-rough);
-}
-.case-rail .is-done a::before,
-.case-rail a:hover::before {
-  background: var(--sheet) var(--hatch);
-}
-.case-rail a[aria-current="step"] {
-  color: var(--sheet);
-}
-.case-rail a[aria-current="step"]::before {
-  border-color: var(--navy);
-  background: var(--navy);
-  box-shadow: 3px 3px 0 var(--warm);
-}
-@media (max-width: 699px) {
-  .case-rail a {
-    width: clamp(32px, 10vw, 40px);
-    height: clamp(32px, 10vw, 40px);
-  }
-}
 .case-copy {
   min-width: 0;
 }
@@ -412,87 +367,17 @@ html.is-scenes .stage::after {
   filter: url(#pencil-rough);
   pointer-events: none;
 }
-.case-note .case-code {
-  max-width: none;
-  margin: 12px 0 0;
-}
 .case-actions {
   margin: 3px 0 8px;
 }
-#case .case-pager {
-  position: static;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-}
-#case .case-pager p {
-  font: 400 var(--step--1) / 1.4 var(--font-chrome);
-}
-html.is-scenes #case > .stage:not(.is-empty) {
-  display: flex;
-  margin: 26px 4px 12px;
-}
-html.is-scenes #case > .stage.is-empty {
-  display: none;
-}
 @media (min-width: 1000px) {
+  /* A case study is one column: its text and its diagram. */
   html.is-scenes #case:not([hidden]) {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 38%);
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto;
     gap: 0 42px;
     align-content: start;
   }
-  html.is-scenes #case:not(:has(> .stage:not(.is-empty))):not([hidden]) {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  html.is-scenes #case > .stage:not(.is-empty) {
-    grid-area: 2 / 2;
-    margin-top: 0;
-  }
-}
-.case-figure-sketch {
-  display: none;
-  margin: 10px 14px;
-  padding: 16px;
-  border-radius: 4px;
-  background: var(--hatch);
-  text-align: center;
-}
-.has-step-sketch:not(:has(details[open])) .case-figure-sketch {
-  display: block;
-}
-.case-figure-sketch svg {
-  display: block;
-  width: 100%;
-  margin: 0 auto;
-  fill: none;
-  stroke: var(--lead);
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2.3;
-  filter: url(#pencil-rough);
-}
-.case-figure-sketch p {
-  margin: 5px 0 0;
-  color: var(--muted);
-  font: var(--step--1) / 1.4 var(--font-chrome);
-}
-.case-figure-controls > summary {
-  display: none;
-}
-.case-figure-controls:not([open]) > .stage-body {
-  display: none;
-}
-.has-step-sketch:not(.no-3d):not(:has([data-figure-state="fallback"]))
-  .case-figure-controls
-  > summary {
-  display: list-item;
-  min-height: 36px;
-  margin: 0 14px;
-  padding-block: 8px;
-  color: var(--navy);
-  cursor: pointer;
 }
 /* ---------- Contact: email first, then the other ways in ---------- */
 html.is-scenes #contact .contact-main {
@@ -642,10 +527,10 @@ html:not(.is-scenes) .certificate-next {
 }
 
 /* Pencil-framed figures on paper. */
-html.is-scenes :is(#work, #case) > .stage {
+html.is-scenes #work > .stage {
   background: var(--sheet);
 }
-:is(#work, #case) > .stage .stage-bar {
+#work > .stage .stage-bar {
   padding: 12px 14px 0;
   border: 0;
   background: none;
@@ -654,17 +539,17 @@ html.is-scenes :is(#work, #case) > .stage {
   letter-spacing: normal;
   text-transform: none;
 }
-:is(#work, #case) > .stage .stage-bar span {
+#work > .stage .stage-bar span {
   padding: 0;
   background: none;
 }
-html.is-scenes :is(#work, #case) > .stage .figure-host {
+html.is-scenes #work > .stage .figure-host {
   height: clamp(175px, 25vw, 265px);
 }
-:is(#work, #case) .stage .figure-host::after {
+#work .stage .figure-host::after {
   content: none;
 }
-:is(#work, #case) .stage .figure-readout {
+#work .stage .figure-readout {
   min-height: 0;
   color: var(--muted);
   font-family: var(--font-text);

@@ -1,0 +1,38 @@
+{
+  "clip": "ce19dc912ca5cd21c8a653c79e251e808ccabcd1",
+  "checkpointSha256": "2de57628bb6f24a03a8c8fc73f58f6688ecc29756f4f6d6a09a825138078b5d0",
+  "images": {
+    "generated-blur.jpg": {
+      "score": 0.7513836622238159,
+      "sha256": "da97b4e9be252f6a8b4024d6510edf9d7086dd90b34ca3c44112b19d9adc5c77"
+    },
+    "generated-jpeg.jpg": {
+      "score": 0.36129143834114075,
+      "sha256": "ca93932e0f18f8376d650717a33bf8c4f90aa3e1fd42cde24e1e460881644bd4"
+    },
+    "generated-original.jpg": {
+      "score": 0.6416353583335876,
+      "sha256": "049960c72d44a7ce6686812e1c268b2f96e8960fd75aa056dff3f934452a7aa7"
+    },
+    "generated-resize.jpg": {
+      "score": 0.7288398146629333,
+      "sha256": "84f1eb6f32fbf34b87079dde6d392355f97976f9ae19504ff78ffb04dbb677ed"
+    },
+    "photo-blur.jpg": {
+      "score": 0.36042124032974243,
+      "sha256": "380639ef649f6a46a1e88c229fb0ebe47b9c5acd91ddb041a5f105d42b7edfe4"
+    },
+    "photo-jpeg.jpg": {
+      "score": 0.020631810650229454,
+      "sha256": "3b296f7ae4e98642155079248c642ad1a2c95a80b7c4c37338f8fb2e7539caef"
+    },
+    "photo-original.jpg": {
+      "score": 0.04086843878030777,
+      "sha256": "bf869b3101a9faa58ebda2f03311d3f587d3249b66f0407749a694d83fc0541e"
+    },
+    "photo-resize.jpg": {
+      "score": 0.05111968517303467,
+      "sha256": "b4991ae4015d0510edbb42ff3edbd00cebf88dbabd6aa37e591caa56f487acd0"
+    }
+  }
+}

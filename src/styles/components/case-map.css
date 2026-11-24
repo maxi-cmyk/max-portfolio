@@ -1,6 +1,6 @@
-/* The case study's extra paragraphs, step tables and the drawn step map
+/* The case study's diagram, its results table and its notes
    (components/case-map.js). Pencil like the rest of the window: sketched
-   boxes on paper, the current step filled navy. */
+   boxes on paper, the branch points filled navy. */
 
 /* ---------- Paragraphs share the note's ruling ---------- */
 #case .case-note {
@@ -8,20 +8,11 @@
   background-position: 0 9px;
   max-width: 46rem;
 }
-.case-note .case-body,
-.case-more p {
+.case-note .case-body {
   line-height: var(--paper-line);
 }
-.case-more p {
-  margin: var(--paper-line) 0 0;
-  font-family: var(--font-text);
-  font-size: var(--step-1);
-}
-.case-more:empty {
-  display: none;
-}
 
-/* ---------- Step tables ---------- */
+/* ---------- Results tables ---------- */
 .case-table {
   position: relative;
   max-width: 100%;
@@ -86,7 +77,7 @@
   }
 }
 
-/* ---------- The step map ---------- */
+/* ---------- The diagram ---------- */
 #case-map:empty {
   display: none;
 }
@@ -130,16 +121,6 @@
   filter: url(#pencil-rough);
   pointer-events: none;
 }
-/* A pencil arrow to the next box. */
-.case-map-chain > li:not(:last-child)::after {
-  position: absolute;
-  top: 50%;
-  right: -21px;
-  color: var(--lead);
-  content: "→";
-  font: 400 var(--step-1) / 1 var(--font-text);
-  translate: 0 -50%;
-}
 .case-map-node b {
   display: flex;
   align-items: baseline;
@@ -154,124 +135,289 @@
   color: var(--warm);
   font: var(--step--1) / 1.3 var(--font-text);
 }
-.case-map-n {
-  display: inline-grid;
-  flex: none;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  border: 1.3px solid currentColor;
-  border-radius: 50%;
-  font: 400 11px / 1 var(--font-chrome);
-}
-.case-map .is-current {
-  background: var(--navy);
-  color: var(--sheet);
-}
-.case-map .is-current > span,
-.case-map .is-current small,
-.case-map .is-current .case-map-n {
-  color: var(--sheet);
-}
-.case-map-node.is-gate::before {
-  border-style: dashed;
-  border-color: var(--warm);
-}
 
-/* Algorithm flow: label over detail. */
-.case-map--flow .case-map-node {
-  flex: 1 1 120px;
-}
-
-/* Pipeline: one source, two lanes side by side, one merge, top to bottom. */
-.case-map--pipeline .case-map-chain {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 24px;
-}
-.case-map--pipeline .case-map-chain > li:not(:last-child)::after {
-  top: auto;
-  right: auto;
-  bottom: -22px;
-  left: 50%;
-  content: "↓";
-  translate: -50% 0;
-}
-.case-map--pipeline .case-map-chain > .case-map-node {
+#case.is-single-page .case-copy {
+  width: min(100%, 46rem);
   justify-self: center;
-  width: fit-content;
-  margin-inline: auto;
 }
-.case-map-split {
-  position: relative;
+#case.is-single-page .case-note {
+  margin: 10px 0 0;
+  padding: 0;
+  background: none;
 }
-.case-map-lanes {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+#case.is-single-page .case-note::before {
+  content: none;
 }
-.case-map-lane {
-  position: relative;
-  padding: 8px 10px 9px;
-  border-radius: 4px;
-  background: var(--hatch), var(--sheet);
-}
-.case-map-lane::before {
-  position: absolute;
-  inset: 0;
-  border: 1.5px solid var(--lead);
-  border-radius: inherit;
-  content: "";
-  filter: url(#pencil-rough);
-  pointer-events: none;
-}
-.case-map-lane.is-current {
-  background: var(--navy);
-}
-.case-map-lane b {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 5px;
-  font: 400 var(--step-0) / 1.2 var(--font-chrome);
-}
-.case-map-lane li {
-  padding: 3px 6px;
-  background: var(--sheet);
-  color: var(--ink);
-  font: var(--step--1) / 1.35 var(--font-text);
-}
-.case-map-lane li + li {
-  margin-top: 4px;
+#case.is-single-page .case-body {
+  line-height: 1.5;
 }
 
-/* Frame loop: the phases repeat every frame; the score tables come after. */
-.case-map-tick {
+.case-map--branching {
+  container-type: inline-size;
+  margin: 22px 0 0;
+}
+.case-map--branching figcaption,
+.case-map--lanes figcaption,
+.case-after-flow :is(h3, h4) {
   margin: 0 0 8px;
-  color: var(--warm);
-  font: 400 var(--step-0) / 1.2 var(--font-chrome);
+  color: var(--navy);
+  font: 400 var(--step-1) / 1.2 var(--font-chrome);
 }
-.case-map-ring > li:last-child::after {
+.case-map-intake {
+  display: grid;
+  gap: 20px;
+}
+.case-map--branching .case-map-node {
+  box-sizing: border-box;
+  padding: 9px 12px;
+}
+.case-map--branching .case-map-node b {
+  font-size: var(--step-0);
+}
+.case-map--branching .case-map-node > span {
+  color: var(--ink);
+  font-size: var(--step-0);
+  line-height: 1.35;
+}
+.case-map-intake > .case-map-node::after {
   position: absolute;
-  top: 50%;
-  right: -21px;
-  color: var(--warm);
-  content: "↺";
-  font: 400 var(--step-1) / 1 var(--font-text);
-  translate: 0 -50%;
+  inset: auto auto -14px 17px;
+  width: 7px;
+  height: 7px;
+  border: solid var(--navy);
+  border-width: 0 1px 1px 0;
+  content: "";
+  transform: rotate(45deg);
 }
-.case-map-node.is-core::before {
-  border-color: var(--warm);
-  border-width: 2.2px;
+.case-map-root {
+  display: block;
+  padding: 9px 12px;
+  border-radius: 4px;
+  background: var(--navy);
+  color: var(--sheet);
+  font: 400 var(--step-0) / 1.3 var(--font-chrome);
 }
-.case-map-after {
-  margin-top: 14px !important;
+.case-map .case-map-outcomes {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  margin: 0 0 0 20px;
+  padding: 12px 0 0 16px;
+  list-style: none;
 }
-.case-map-after .case-map-node::before {
+.case-map-outcomes > li::after {
+  position: absolute;
+  top: -8px;
+  bottom: 0;
+  left: -16px;
+  width: 16px;
+  border-left: 1px solid var(--navy);
+  background: linear-gradient(var(--navy), var(--navy)) 0 25px / 100% 1px
+    no-repeat;
+  content: "";
+}
+.case-map-outcomes > li:first-child::after {
+  top: -12px;
+  background-position: 0 29px;
+}
+.case-map-outcomes > li:last-child::after {
+  height: 26px;
+}
+.case-map-outcomes .is-pending::before {
   border-style: dashed;
 }
+.case-map-outcomes .is-approved b {
+  color: var(--navy);
+}
+.case-after-flow {
+  margin-top: 22px;
+}
+.case-after-flow p {
+  max-width: 68ch;
+  margin: 0 0 8px;
+  font: var(--step-0) / 1.5 var(--font-text);
+}
+@container (min-width: 32rem) {
+  .case-map-intake > .case-map-node::after {
+    left: calc(50% - 4px);
+  }
+  .case-map .case-map-outcomes {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 0;
+    padding: 22px 0 0;
+  }
+  .case-map-outcomes::before {
+    position: absolute;
+    inset: 0 calc(25% - 4px) auto;
+    height: 12px;
+    background: linear-gradient(var(--navy), var(--navy)) center / 1px 100%
+      no-repeat;
+    border-bottom: 1px solid var(--navy);
+    content: "";
+  }
+  .case-map-outcomes > li::after,
+  .case-map-outcomes > li:first-child::after,
+  .case-map-outcomes > li:last-child::after {
+    inset: -10px auto auto 50%;
+    width: 1px;
+    height: 10px;
+    border: 0;
+    background: var(--navy);
+  }
+}
 
-/* Two devices: one lane each, one event per row. */
+.case-map--platforms .case-map-root span {
+  display: block;
+  margin-top: 3px;
+  font: var(--step-0) / 1.35 var(--font-text);
+}
+.case-map--platforms dl {
+  display: grid;
+  gap: 4px;
+  margin: 5px 0 0;
+}
+.case-map--platforms dl div {
+  display: grid;
+  grid-template-columns: 3.6em minmax(0, 1fr);
+  gap: 6px;
+}
+.case-map--platforms dt {
+  color: var(--navy);
+  font-weight: 700;
+}
+.case-map--platforms dd {
+  margin: 0;
+}
+.case-map-timing {
+  margin: 9px 0 0;
+  padding-top: 7px;
+  border-top: 1px solid var(--lead);
+  line-height: 1.4;
+}
+
+/* Signal chain (music_LEDs, Conway, cya): stages, then a bar that splits
+   into its outputs. */
+.case-map--signal .case-map-root span {
+  display: block;
+  margin-top: 3px;
+  font: var(--step-0) / 1.35 var(--font-text);
+}
+.case-map--signal .case-map-outcomes .case-map-node b {
+  align-items: center;
+}
+.case-map--signal .led {
+  flex: none;
+  margin-right: 2px;
+}
+@container (min-width: 32rem) {
+  .case-map--signal .case-map-outcomes {
+    grid-template-columns: repeat(var(--outputs, 2), minmax(0, 1fr));
+  }
+  /* The bar spans the outer columns' centres (n columns, 16px gaps). */
+  .case-map--signal .case-map-outcomes::before {
+    inset: 0
+      calc((100% - 16px * (var(--outputs, 2) - 1)) / var(--outputs, 2) / 2) auto;
+  }
+}
+/* cya's results sit between the diagram and the notes. */
+#case-map > .case-table {
+  margin: 18px 0 0;
+}
+
+/* Pipeline (it'sPEAK): one upload, two analyses, one merge. */
+.case-map--pipeline .case-map-root span {
+  display: block;
+  margin-top: 3px;
+  font: var(--step-0) / 1.35 var(--font-text);
+}
+.case-map--pipeline .case-map-merge {
+  position: relative;
+  margin-top: 28px;
+}
+/* Down from the analyses into the merge. */
+.case-map--pipeline .case-map-merge::before {
+  position: absolute;
+  top: -20px;
+  left: 17px;
+  width: 7px;
+  height: 7px;
+  border: solid var(--navy);
+  border-width: 0 1px 1px 0;
+  content: "";
+  transform: rotate(45deg);
+}
+@container (min-width: 32rem) {
+  .case-map--pipeline .case-map-merge::before {
+    top: -18px;
+    left: 25%;
+    width: 50%;
+    height: 10px;
+    border-width: 0 1px 1px;
+    transform: none;
+  }
+  .case-map--pipeline .case-map-merge::after {
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    width: 1px;
+    height: 8px;
+    background: var(--navy);
+    content: "";
+  }
+}
+
+.case-map-footnote {
+  margin: 12px 0 4px;
+  color: var(--muted);
+  font: var(--step--1) / 1.45 var(--font-text);
+}
+
+@media (min-width: 900px) {
+  html.is-scenes #case:has(.case-map--platforms):not(.is-zoomed) {
+    bottom: auto;
+    height: fit-content;
+    max-height: calc(100% - 64px);
+  }
+  #case:has(.case-map--platforms) .case-copy {
+    width: min(100%, 56rem);
+    margin-inline: auto;
+  }
+  #case:has(.case-map--platforms) .case-body {
+    max-width: 66ch;
+    font-size: var(--step-2);
+  }
+  #case .case-map--platforms {
+    --step-0: var(--step-1);
+  }
+  #case .case-map--platforms figcaption {
+    font-size: var(--step-2);
+  }
+  #case .case-map--platforms :is(.case-map-root, .case-map-node) {
+    padding: 14px 18px;
+  }
+  #case:has(.case-map--platforms) .case-map-footnote {
+    font-size: var(--step-0);
+  }
+}
+@media (min-width: 900px) and (max-height: 690px) {
+  html.is-scenes #case:has(.case-map--platforms):not(.is-zoomed) {
+    top: 16px;
+    max-height: calc(100% - 32px);
+  }
+  #case:has(.case-map--platforms) .case-body {
+    font-size: 19px;
+  }
+  #case .case-map--platforms {
+    --step-0: 16px;
+    margin-top: 16px;
+  }
+  #case .case-map--platforms :is(.case-map-root, .case-map-node) {
+    padding-block: 10px;
+  }
+}
+
+/* Events in order, one column per device (Sentinel). */
 .case-map-grid {
   display: grid;
   grid-template-columns: repeat(var(--lanes), minmax(0, 1fr));
@@ -292,9 +438,11 @@
   grid-template-columns: subgrid;
   gap: 6px 10px;
 }
-.case-map--lanes .case-map-chain > li:not(:last-child)::after {
-  content: none;
+.case-map--lanes .case-map-node > span {
+  color: var(--ink);
+  line-height: 1.35;
 }
+/* The device name is in the column head; on a phone it moves into the box. */
 .case-map--lanes small {
   position: absolute;
   width: 1px;
@@ -304,19 +452,31 @@
   white-space: nowrap;
 }
 @media (max-width: 699px) {
-  /* Rows wrap on a phone, so the numbers carry the order instead of arrows
-     that would point off the end of a row. */
-  .case-map-chain {
-    gap: 10px;
+  .case-map--lanes .case-map-grid {
+    display: block;
   }
-  .case-map:not(.case-map--pipeline) .case-map-chain > li::after {
-    content: none !important;
+  .case-map-heads {
+    display: none;
   }
-  .case-map-node b {
-    font-size: var(--step--1);
+  .case-map--lanes .case-map-chain {
+    display: grid;
+    gap: 8px;
   }
-  .case-map--lanes .case-map-node {
-    padding: 6px 7px;
-    font-size: var(--step--1);
+  /* One column, in order: the desktop places each box in its device's
+     column inline. */
+  .case-map--lanes .case-map-chain > li {
+    grid-area: auto !important;
+  }
+  .case-map--lanes .case-map-node b {
+    flex-wrap: wrap;
+  }
+  .case-map--lanes small {
+    flex-basis: 100%;
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    color: var(--warm);
   }
 }

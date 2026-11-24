@@ -309,11 +309,6 @@ html.is-scenes #skills:has(.skills-page:not([hidden])) > .titlebar {
 .skills-pending {
   color: var(--muted);
 }
-.skills-evidence-label {
-  display: block;
-  color: var(--warm);
-  font: 400 0.75rem / 1.3 var(--font-chrome);
-}
 @media (max-width: 699px) {
   .skills .section-heading {
     margin-bottom: 14px;

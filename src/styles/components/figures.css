@@ -128,12 +128,8 @@ html.is-scenes .stage .figure-host {
 .stage .figure-caption {
   margin: 0;
 }
-/* On a phone the figure belongs to the case study; the Work list stays plain. */
+/* Below laptop width the figure is a little shorter. */
 @media (max-width: 999px) {
-  html.is-scenes #case > .stage:not(.is-empty) {
-    display: flex;
-    margin: 0 0 16px;
-  }
   html.is-scenes .stage .figure-host {
     height: 210px;
   }

@@ -32,11 +32,7 @@ export function routeToScene(route) {
         categories: route.categories ?? [],
       };
     case "project":
-      return {
-        scene: "case",
-        slug: route.slug,
-        step: route.step ?? 1,
-      };
+      return { scene: "case", slug: route.slug };
     case "section":
       return {
         scene: SECTION_SCENES[route.id] ?? "hub",
@@ -53,10 +49,7 @@ export function sceneToHash(target) {
     case "work":
       return workHash(target.categories ?? [], target.slug);
     case "case":
-      return projectHash(
-        target.slug,
-        target.step > 1 ? target.step : undefined,
-      );
+      return projectHash(target.slug);
     case "skills":
       return skillsHash(target.category);
     case "credentials":
@@ -65,6 +58,25 @@ export function sceneToHash(target) {
       return "#contact";
     default:
       return "#home";
+  }
+}
+
+export function scenePath({ scene, slug, categories, category }) {
+  switch (scene) {
+    case "work": {
+      const folder = slug ?? (categories?.length === 1 ? categories[0] : "");
+      return folder ? `~/work/${folder}` : "~/work";
+    }
+    case "case":
+      return `~/work/${slug}/case`;
+    case "skills":
+      return category ? `~/skills/${category}` : "~/skills";
+    case "credentials":
+      return "~/credentials";
+    case "contact":
+      return "~/contact";
+    default:
+      return "~";
   }
 }
 
@@ -99,10 +111,7 @@ export function sameScene(a, b) {
     );
   }
   if (a.scene === "case") {
-    return (
-      a.slug === b.slug &&
-      (a.step ?? 1) === (b.step ?? 1)
-    );
+    return a.slug === b.slug;
   }
   return true;
 }
@@ -140,7 +149,7 @@ export function createSceneMachine(initial = hubTarget()) {
         ...target,
         phase: animate ? "transitioning" : "idle",
         seq,
-        from: { scene: state.scene, slug: state.slug, step: state.step },
+        from: { scene: state.scene, slug: state.slug },
         interrupted: state.phase === "transitioning",
       };
       emit();

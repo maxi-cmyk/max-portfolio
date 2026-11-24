@@ -1,5 +1,7 @@
-// Which project gets which 3D figure, what its controls are, and the caption
-// that says exactly what is real and what is schematic. Pure data.
+// Which project gets which figure, what its controls are, and the caption
+// that says exactly what is real and what is schematic. Most are 3D
+// (figures/stage.js); a `panel` figure is drawn in HTML and a 2D canvas
+// instead (figures/panels.js). Pure data.
 
 const ms = (v) => `${v}`;
 
@@ -22,61 +24,35 @@ export const FIGURES = {
       { type: "toggle", id: "auto", label: "Auto-sweep", value: true },
     ],
     caption:
-      "An example signal (tones at 150, 600 and 1800 Hz, one in each of the firmware's bands) is wound around an axis at the chosen frequency. When the frequency matches a tone, the wound curve goes lopsided and its centre of mass moves off the axis (shown ×3). The LED takes the band's colour: 50–250 Hz red, 300–1000 Hz green, 1050–2500 Hz blue. 128 samples at 6.4 kHz, so the bins are 50 Hz apart.",
+      "Tones at 150, 600 and 1800 Hz wound around an axis. At a matching frequency the curve goes lopsided. LED bands: 50–250 Hz red, 300–1000 Hz green, 1050–2500 Hz blue.",
   },
   "timing-attack-lab": {
-    id: "staircase",
-    title: "Timing staircase",
-    controls: [
-      {
-        type: "toggle",
-        id: "fixed",
-        label: "Constant-time compare",
-        value: false,
-      },
-    ],
+    id: "terminal",
+    // Not 3D: an HTML terminal (figures/timing-terminal.js).
+    panel: true,
+    title: "Timing attack",
+    controls: [{ type: "toggle", id: "paused", label: "Pause", value: false }],
     caption:
-      "Illustrative, from the lab's design: the vulnerable comparison sleeps 1 ms after every matching byte of a 4-byte synthetic secret, so the response time climbs one step per correct byte; the constant-time comparison flattens it. Measured results are WIP.",
+      "Illustrative timings, exaggerated to be readable: 50 ms plus 40 ms for each right leading character. The lab's own vulnerable mode adds 1 ms per matching byte of a 4-byte secret; measured results are WIP.",
   },
   "conway-game-of-life": {
     id: "torus",
-    title: "Torus world",
+    title: "The 32×8 grid as a torus",
     controls: [
       { type: "button", id: "glider", label: "Add glider" },
       { type: "button", id: "reset", label: "Reseed" },
     ],
     caption:
-      "The 32×8 board is wrapped into a torus, so a glider that leaves one edge comes back at the opposite one. A cell is born with exactly three neighbours and survives with two or three.",
+      "A render of the grid's wrap-around: the board is a flat 32×8 LED matrix, but each edge counts the opposite edge as its neighbour, so the grid behaves like a torus. A glider leaving one edge returns at the other.",
   },
   cya: {
-    id: "boundary",
-    title: "Decision boundary",
-    controls: [
-      {
-        type: "range",
-        id: "strength",
-        label: "Transform strength",
-        min: 0,
-        max: 100,
-        step: 1,
-        value: 30,
-        unit: "%",
-        scale: 1,
-      },
-      {
-        type: "select",
-        id: "kind",
-        label: "Transformation",
-        value: "jpeg",
-        options: [
-          { value: "jpeg", label: "JPEG recompression" },
-          { value: "blur", label: "Blur" },
-          { value: "resize", label: "Resize" },
-        ],
-      },
-    ],
+    id: "robustness",
+    // A recorded prediction panel (figures/robustness.js).
+    panel: true,
+    title: "Real or AI-generated?",
+    controls: [],
     caption:
-      "A schematic of the idea, not real embeddings: authentic (navy) and AI-generated (plum) images fall either side of a boundary, and a transformation pulls them toward it. Reported results: 99.62% mean accuracy under JPEG, blur and resizing on validation; 140 of 141 on the held-out test (single run).",
+      "Predictions recorded with cya on these exact image files. The raw AI scores are uncalibrated.",
   },
 };
 

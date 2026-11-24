@@ -42,7 +42,12 @@ export function initHeroTerminal() {
   };
   const target = { output, container: about, resolve: heroCommand };
   const title = bar.querySelector(".titlebar-title");
-  const idleTitle = title.textContent;
+  const titlePath = title.querySelector(".titlebar-path");
+  const idlePath = titlePath.textContent;
+  const setPath = (path) => {
+    titlePath.textContent = path;
+    title.title = title.textContent;
+  };
 
   const lights = createLights({
     name: "About Max",
@@ -94,7 +99,7 @@ export function initHeroTerminal() {
       viewport.addEventListener("resize", fitConsole);
       viewport.addEventListener("scroll", fitConsole);
     }
-    title.textContent = "max@portfolio:~/console";
+    setPath("~/terminal");
     syncLights();
     revealLatest(output);
   }
@@ -104,7 +109,7 @@ export function initHeroTerminal() {
     viewport?.removeEventListener("resize", fitConsole);
     viewport?.removeEventListener("scroll", fitConsole);
     about.style.removeProperty("--console-viewport-bottom");
-    title.textContent = idleTitle;
+    setPath(idlePath);
     syncLights();
     input.blur();
   }
@@ -126,8 +131,6 @@ export function initHeroTerminal() {
         },
       }),
     );
-    if (result.kind === "game")
-      window.dispatchEvent(new Event("portfolio:play"));
     if (result.kind === "led") {
       window.dispatchEvent(new Event("portfolio:led-sound"));
       window.dispatchEvent(

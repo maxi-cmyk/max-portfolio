@@ -153,7 +153,6 @@ export function createTorusFigure(palette) {
         addGlider(cells, (gliders * 11 + 5) % WIDTH, (gliders * 3) % HEIGHT);
       }
     },
-    setStep() {},
     params: () => ({}),
     readout: () => `Generation ${generation} · ${population(cells)} live cells`,
     setSize(width, height) {

@@ -18,8 +18,8 @@ function createCertificateEntry(certificate) {
   const previewImage = document.createElement("img");
   previewImage.src = certificate.previewUrl;
   previewImage.alt = certificate.previewAlt;
-  previewImage.width = 1400;
-  previewImage.height = 1082;
+  previewImage.width = certificate.previewWidth;
+  previewImage.height = certificate.previewHeight;
   previewImage.loading = "lazy";
   previewImage.decoding = "async";
   previewLink.append(previewImage);

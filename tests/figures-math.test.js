@@ -21,19 +21,18 @@ import {
   seedBoard,
   step,
 } from "../src/figures/life.js";
+import cyaPredictions from "../src/data/cya-predictions.json" with { type: "json" };
+import { renderCyaOriginals } from "../src/figures/robustness.js";
 import {
-  KINDS,
-  countWrong,
-  makePoints,
-  mulberry32,
-  transformed,
-} from "../src/figures/boundary-math.js";
-import {
+  BASE_MS,
   DELAY_MS,
+  SECRET,
   SECRET_BYTES,
-  jitter,
-  stairs,
-} from "../src/figures/staircase-math.js";
+  STEP_MS,
+  matching,
+  replyMs,
+  timingScript,
+} from "../src/figures/timing-math.js";
 import { FIGURES, defaultParams, figureFor } from "../src/data/figures.js";
 import { allProjects } from "../src/data/projects.js";
 
@@ -128,38 +127,43 @@ test("Life follows B3/S23: blinkers oscillate, blocks stay, lone cells die", () 
   assert.equal(step(wrap)[0 * WIDTH + 1], 1, "the seam is crossed");
 });
 
-test("the decision-boundary schematic is repeatable and mostly robust", () => {
-  const a = makePoints(56, 17);
-  const b = makePoints(56, 17);
-  assert.deepEqual(a, b);
-  assert.equal(a.length, 112);
-  assert.equal(a.filter((p) => p.side < 0).length, 56);
-  const rand = mulberry32(1);
-  assert.ok(rand() !== rand());
-  for (const kind of Object.keys(KINDS)) {
-    assert.equal(
-      countWrong(a, 0, kind),
-      0,
-      `${kind}: clean points are separated`,
-    );
-    assert.ok(
-      countWrong(a, 1, kind) <= 5,
-      `${kind}: only a handful cross at full strength`,
-    );
-    // Strength pulls the points toward the boundary.
-    const p = a.find((q) => q.side > 0);
-    assert.ok(transformed(p, 1, kind).x < p.x);
+test("cya records every example and shows the original predictions", () => {
+  for (const sample of ["photo", "generated"]) {
+    for (const edit of ["original", "jpeg", "blur", "resize"]) {
+      const { score, sha256 } = cyaPredictions.images[`${sample}-${edit}.jpg`];
+      assert.ok(Number.isFinite(score) && score >= 0 && score <= 1);
+      assert.match(sha256, /^[a-f0-9]{64}$/);
+    }
   }
+  const originals = renderCyaOriginals();
+  assert.match(originals, /photo-original.jpg[\s\S]+cya predicted <strong>Camera photo/);
+  assert.match(originals, /generated-original.jpg[\s\S]+cya predicted <strong>AI-generated/);
+  assert.match(originals, /140 of 141 correct/);
+  // The generated image crosses the detector's decision threshold after JPEG.
+  assert.ok(cyaPredictions.images["generated-jpeg.jpg"].score < 0.5);
 });
 
-test("the timing staircase climbs one millisecond per matching byte", () => {
-  assert.equal(SECRET_BYTES, 4);
-  assert.deepEqual(
-    stairs(false),
-    [0, 1, 2, 3, 4].map((k) => k * DELAY_MS),
-  );
-  assert.deepEqual(stairs(true), [0, 0, 0, 0, 0]);
-  for (let i = 0; i < 5; i++) assert.ok(Math.abs(jitter(i, 12.3)) <= 0.05);
+test("the timing session gives the secret away only through the early exit", () => {
+  assert.equal(SECRET.length, SECRET_BYTES);
+  assert.equal(DELAY_MS, 1);
+  assert.equal(matching("bex"), 2);
+  // Each right leading character adds STEP_MS, give or take the jitter.
+  for (const guess of ["a", "b", "be", "bea", "bead"]) {
+    const expected = BASE_MS + STEP_MS * matching(guess);
+    assert.ok(Math.abs(replyMs(guess) - expected) <= 2, guess);
+    assert.ok(Math.abs(replyMs(guess, true) - BASE_MS) <= 2, guess);
+  }
+  const lines = timingScript();
+  const guesses = lines.filter((l) => l.kind === "guess");
+  // Every early-exit round's slowest guess is the right prefix.
+  for (const line of guesses.filter((l) => l.slowest)) {
+    assert.equal(matching(line.guess), line.guess.length, line.guess);
+  }
+  assert.ok(lines.some((l) => l.kind === "done" && l.text.includes(SECRET)));
+  // Constant time: no guess stands out.
+  const flat = guesses.filter((l) => l.constant).map((l) => l.ms);
+  assert.ok(Math.max(...flat) - Math.min(...flat) <= 4);
+  assert.equal(guesses.filter((l) => l.constant && l.slowest).length, 0);
 });
 
 test("every figure has controls the page can build and a caption that says what is real", () => {
@@ -189,15 +193,20 @@ test("every figure has controls the page can build and a caption that says what 
   }
   assert.equal(figureFor("echo"), null);
   assert.equal(figureFor("__proto__"), null);
-  // Honesty: schematics and illustrations say so; real figures are cited.
-  assert.match(FIGURES.cya.caption, /schematic/i);
-  assert.match(FIGURES.cya.caption, /99\.62%/);
-  assert.match(FIGURES.cya.caption, /140 of 141/);
+  // Honesty: illustrations say so; real figures are cited.
+  assert.match(FIGURES.cya.caption, /recorded.*exact image files/i);
+  assert.match(FIGURES.cya.caption, /uncalibrated/i);
   assert.match(FIGURES["timing-attack-lab"].caption, /Illustrative/);
   assert.match(FIGURES["timing-attack-lab"].caption, /WIP/);
   assert.match(
     FIGURES["music-leds"].caption,
     /50–250 Hz red, 300–1000 Hz green, 1050–2500 Hz blue/,
   );
-  assert.match(FIGURES["conway-game-of-life"].caption, /32×8/);
+  assert.match(
+    FIGURES["conway-game-of-life"].caption,
+    /render[\s\S]+flat 32×8 LED matrix/,
+  );
+  // The timing and cya figures are drawn in HTML, not 3D.
+  assert.equal(FIGURES["timing-attack-lab"].panel, true);
+  assert.equal(FIGURES.cya.panel, true);
 });

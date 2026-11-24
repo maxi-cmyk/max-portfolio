@@ -3,18 +3,6 @@
 // sorts these into layers for the Skills window.
 import { allProjects, focusCategories, otherProjects } from "./projects.js";
 
-// Practice that backs the low-level skills but is not shown as a project.
-export const practiceNode = {
-  id: "practice",
-  name: "Algorithms practice",
-  kind: "practice",
-  href: "https://github.com/maxi-cmyk/Python-to-C-logic-",
-  external: true,
-  note: "114 of 150 problems solved in Python, then re-implemented in C (as reported in the repository README).",
-  categories: [],
-  tags: ["Python", "C"],
-};
-
 export function skillId(label) {
   return label
     .toLowerCase()
@@ -43,7 +31,6 @@ export function getSkillGraph() {
       categories: e.categories,
       tags: e.tags,
     })),
-    practiceNode,
   ];
   const order = Object.keys(focusCategories);
   const byLabel = new Map();

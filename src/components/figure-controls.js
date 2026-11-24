@@ -8,7 +8,8 @@ const display = (control, value) =>
 
 // Builds a figure's controls (sliders, switches, buttons, pop-ups). Every change
 // is sent to the stage as a `figure:control` event; the figure's own changes
-// (auto-sweep, case-study steps) come back as `figure:state` and update them.
+// (an auto-sweep, an auto-play stopping) come back as `figure:state` and
+// update them.
 export function renderControls(container, host, figure) {
   const params = defaultParams(figure);
   container.replaceChildren();

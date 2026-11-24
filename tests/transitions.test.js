@@ -69,10 +69,7 @@ test("changing topic fades", () => {
     "fade",
   );
   assert.equal(
-    pick(
-      { scene: "case", slug: "a", step: 1 },
-      { scene: "case", slug: "b", step: 1 },
-    ),
+    pick({ scene: "case", slug: "a" }, { scene: "case", slug: "b" }),
     "fade",
   );
 });
@@ -103,19 +100,14 @@ test("moving between siblings slides in the right direction", () => {
     ),
     "slide-prev",
   );
+  // A case study is one page: another project's fades, the same one stays.
   assert.equal(
-    pick(
-      { scene: "case", slug: "a", step: 1 },
-      { scene: "case", slug: "a", step: 3 },
-    ),
-    "slide-next",
+    pick({ scene: "case", slug: "a" }, { scene: "case", slug: "b" }),
+    "fade",
   );
   assert.equal(
-    pick(
-      { scene: "case", slug: "a", step: 3 },
-      { scene: "case", slug: "a", step: 2 },
-    ),
-    "slide-prev",
+    pick({ scene: "case", slug: "a" }, { scene: "case", slug: "a" }),
+    "none",
   );
 });
 
@@ -142,10 +134,7 @@ test("every transition the picker can return is a known kind", () => {
   const scenes = ["hub", "work", "case", "skills", "credentials", "contact"];
   for (const a of scenes) {
     for (const b of scenes) {
-      const kind = pick(
-        { scene: a, slug: "a", step: 1 },
-        { scene: b, slug: "b", step: 2 },
-      );
+      const kind = pick({ scene: a, slug: "a" }, { scene: b, slug: "b" });
       assert.ok(TRANSITIONS.includes(kind), `${a} to ${b}: ${kind}`);
     }
   }

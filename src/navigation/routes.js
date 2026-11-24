@@ -14,8 +14,8 @@ export function workHash(categories = [], slug = null) {
   return slug ? `${base}&project=${slug}` : base;
 }
 
-export function projectHash(slug, step) {
-  return step ? `#project/${slug}/${step}` : `#project/${slug}`;
+export function projectHash(slug) {
+  return `#project/${slug}`;
 }
 
 export function skillsHash(category) {
@@ -26,7 +26,7 @@ const SECTION_IDS = ["home", "terminal", "certificates", "contact", "skills"];
 const SECTION_ALIASES = { credentials: "certificates" };
 
 // Hashes: #home #terminal #work #work/<slug> #work?categories=a,b
-// #project/<slug> #project/<slug>/<step> (#project/<slug>/read opens step 1)
+// #project/<slug> (the old #project/<slug>/<step> and /read links open it)
 // #skills #certificates (also #credentials) #contact
 // Retired category ids in #focus/... and ?categories= still resolve.
 export function parseRoute(hash = "") {
@@ -67,16 +67,15 @@ export function parseRoute(hash = "") {
   }
   if (hash.startsWith("#project/")) {
     const [slug, step, ...rest] = hash.slice(9).split("/");
-    if (!caseStudyProjects.some((p) => p.slug === slug) || rest.length) {
+    const project = caseStudyProjects.find((p) => p.slug === slug);
+    if (!project || rest.length) {
       return { kind: "missing" };
     }
     if (step === undefined) return { kind: "project", slug };
-    // The old full write-up now lives in the steps; its links open step 1.
-    if (step === "read") {
+    // Case studies were once paged; old step and full write-up links open the
+    // one page.
+    if (step === "read" || /^[1-9]\d?$/.test(step)) {
       return { kind: "project", slug, hash: projectHash(slug) };
-    }
-    if (/^[1-9]\d?$/.test(step)) {
-      return { kind: "project", slug, step: Number(step) };
     }
     return { kind: "missing" };
   }
