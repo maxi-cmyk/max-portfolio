@@ -7,7 +7,6 @@ import {
   getTerminalPlaceholder,
 } from "./terminal/easter-eggs.js";
 import { initScenes, playHeroReveal } from "./components/scenes.js";
-import { initCertificates } from "./components/certificates.js";
 import { initFocusTooling } from "./components/focus-tooling.js";
 import { initFigures } from "./components/figures.js";
 import { initMenubar } from "./components/menubar.js";
@@ -57,7 +56,6 @@ function handleMascotClick() {
 }
 
 pandaMascot.addEventListener("click", handleMascotClick);
-initCertificates();
 initFocusTooling();
 initScenes();
 initMenubar();

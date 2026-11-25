@@ -283,6 +283,7 @@ export function createStage({ mode }) {
     const entry = build(host);
     if (!entry) return;
     entry.canvas = document.createElement("canvas");
+    entry.canvas.setAttribute("aria-hidden", "true");
     entry.canvas.className = "figure-canvas";
     entry.canvas.setAttribute("aria-hidden", "true");
     entry.ctx = entry.canvas.getContext("2d");
@@ -298,6 +299,10 @@ export function createStage({ mode }) {
 
   // The host now names a different figure (or none): replace or remove it.
   function swap(host) {
+    if (failed) {
+      if (host.dataset.figure) host.dataset.figureState = "fallback";
+      return;
+    }
     const old = entries.get(host);
     if (!old) return mount(host);
     if (old.id === host.dataset.figure) return;
@@ -346,5 +351,13 @@ export function createStage({ mode }) {
     }
   });
 
-  return { swap };
+  return {
+    swap,
+    setMode(next) {
+      if (mode === next) return;
+      mode = next;
+      last = 0;
+      schedule();
+    },
+  };
 }

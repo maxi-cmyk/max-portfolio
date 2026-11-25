@@ -35,6 +35,31 @@ import {
 } from "../src/figures/timing-math.js";
 import { FIGURES, defaultParams, figureFor } from "../src/data/figures.js";
 import { allProjects } from "../src/data/projects.js";
+import { createTorusFigure } from "../src/figures/torus.js";
+
+test("the torus pauses generations and accepts manual changes while paused", () => {
+  const figure = createTorusFigure({ navy: "#12376b", plum: "#7a2e5d", muted: "#545454" });
+  const update = () => figure.update({
+    dt: 0.2,
+    pointer: { x: 0, y: 0 },
+    orbit: { yaw: 0, pitch: 0 },
+    still: false,
+  });
+  update();
+  const running = figure.readout();
+  figure.set("paused", true);
+  update();
+  assert.equal(figure.readout(), running);
+  figure.set("glider", true);
+  update();
+  assert.match(figure.readout(), /^Generation 1 · 10 live cells$/);
+  figure.set("reset", true);
+  update();
+  assert.match(figure.readout(), /^Generation 0 · 5 live cells$/);
+  figure.set("paused", false);
+  update();
+  assert.match(figure.readout(), /^Generation 1 · 5 live cells$/);
+});
 
 test("the winding machine finds each tone at its own bin and nowhere else", () => {
   assert.equal(N, 128);

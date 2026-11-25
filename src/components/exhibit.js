@@ -17,8 +17,8 @@ export function createExhibit(figureBody) {
   stage.className = "stage exhibit is-empty";
   stage.setAttribute("aria-roledescription", "carousel");
   stage.setAttribute("aria-label", "Project exhibits");
-  stage.innerHTML = `<div class="stage-bar"><span data-stage-title></span><span class="exhibit-nav" data-exhibit-nav hidden><span class="exhibit-count" data-exhibit-count></span><button type="button" class="exhibit-arrow" data-exhibit-step="-1" aria-label="Previous exhibit">‹</button><button type="button" class="exhibit-arrow" data-exhibit-step="1" aria-label="Next exhibit">›</button></span></div>
-    <div class="exhibit-track" data-exhibit-track>
+  stage.innerHTML = `<div class="stage-bar"><span data-stage-title></span><span class="exhibit-nav" data-exhibit-nav hidden><span class="exhibit-count" data-exhibit-count></span><button type="button" class="exhibit-arrow" data-exhibit-step="-1" aria-label="Previous exhibit"><span aria-hidden="true">‹</span></button><button type="button" class="exhibit-arrow" data-exhibit-step="1" aria-label="Next exhibit"><span aria-hidden="true">›</span></button></span></div>
+    <div class="exhibit-track" data-exhibit-track role="group" aria-label="Exhibit slides">
       <div class="exhibit-slide is-figure" data-exhibit-figure role="group" aria-roledescription="slide">${figureBody}</div>
     </div>
     <div class="exhibit-dots" data-exhibit-dots hidden></div>`;
@@ -83,6 +83,8 @@ export function fillExhibit(stage, project, figureTitle) {
   stage.classList.toggle("is-empty", !slides.length);
   stage.classList.toggle("has-clip", clips.length > 0);
   const many = slides.length > 1;
+  if (many) track.tabIndex = 0;
+  else track.removeAttribute("tabindex");
   stage.querySelector("[data-exhibit-nav]").hidden = !many;
   const dots = stage.querySelector("[data-exhibit-dots]");
   dots.hidden = !many;
@@ -162,6 +164,7 @@ function wire(stage) {
   // control inside the slide wants the keys.
   stage.addEventListener("keydown", (event) => {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
     if (event.target.closest(".exhibit-slide")) return;
     event.preventDefault();
     go(active + (event.key === "ArrowLeft" ? -1 : 1));
@@ -176,8 +179,12 @@ function wire(stage) {
     });
   });
   // The panel changes width with the window: stay on the same slide.
+  let trackWidth = 0;
   new ResizeObserver(() => {
-    track.scrollLeft = active * track.clientWidth;
+    const width = track.clientWidth;
+    if (width === trackWidth) return;
+    trackWidth = width;
+    track.scrollLeft = active * width;
   }).observe(track);
 
   // Clips play only while at least half of them is on screen: on the
@@ -194,6 +201,9 @@ function wire(stage) {
     },
     { threshold: 0.5 },
   );
+  matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", ({ matches }) => {
+    if (matches) for (const video of track.querySelectorAll("video")) video.pause();
+  });
   stage.exhibit = {
     show,
     watch: (slide) => {

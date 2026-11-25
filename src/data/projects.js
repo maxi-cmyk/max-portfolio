@@ -6,6 +6,8 @@ const projectsBySlug = {
     slug: "music-leds",
     categories: ["signals-hardware"],
     hook: "An ESP32 runs a custom FFT on live sound and lights an RGB LED by frequency band.",
+    motivation:
+      "I wanted a way to teach the Fourier transform using something people could hear and see. An RGB LED reacting to live sound gave me a way to connect the frequency coefficients on screen to something happening on the desk.",
     role: WIP,
     proof: "Live browser demo",
     live: { label: "Try it", url: "https://musicled-webpage.vercel.app" },
@@ -69,7 +71,9 @@ const projectsBySlug = {
   cya: {
     slug: "cya",
     categories: ["applied-ai"],
-    hook: "Tells real images from AI-generated ones, even after JPEG, blur and resizing.",
+    hook: "A detector for real photos and AI-generated images, tested on JPEG compression, blur, and resizing.",
+    motivation:
+      "I wanted to know what clues would still distinguish a real photo from an AI-generated one after the image had been blurred, resized, or compressed. That question shaped how we tested cya.",
     role: "Data pipeline, detector baselines, evaluation tooling, inference backend and CLI, submission integration.",
     proof: "Held-out test: 140 of 141 images correct (single run)",
     media: [
@@ -84,13 +88,13 @@ const projectsBySlug = {
     meta: "TechJam 26 · participant",
     tags: ["Python", "PyTorch", "CLIP / RINE", "FastAPI", "React"],
     description:
-      "A team project distinguishing fully authentic from fully AI-generated images, with robustness to compression, blur, and resizing. I built the data pipeline, detector baselines, evaluation tooling, inference backend and CLI, and submission integration.",
+      "A team project distinguishing fully authentic from fully AI-generated images. We evaluated the detector on clean, compressed, blurred, and resized images. I built the data pipeline, detector baselines, evaluation tooling, inference backend and CLI, and submission integration.",
     insights: {
       layout: "signal-chain",
       teaser:
         "See how cya scores an image and how JPEG compression, blur, and resizing affect the detector.",
       summary:
-        "A detector that tells real images from AI-generated ones, and still works after JPEG, blur and resizing.",
+        "We tested a detector for real and AI-generated images on JPEG-compressed, blurred, and resized inputs.",
       signalChain: {
         title: "How an image is scored",
         stages: [
@@ -114,7 +118,7 @@ const projectsBySlug = {
         results: {
           caption:
             "Repository-reported evaluation; selection and held-out sets are separate",
-          head: ["", "Accuracy", "Note"],
+          head: ["Dataset", "Accuracy", "Note"],
           rows: [
             ["Clean validation", "100.00%", "Mean across 3 seeds"],
             ["Transformed validation", "99.62%", "Mean robustness accuracy"],
@@ -138,6 +142,8 @@ const projectsBySlug = {
     slug: "itspeak",
     categories: ["applied-ai"],
     hook: "A rehearsal coach that scores pace, pitch, filler words, posture and eye contact.",
+    motivation:
+      "I wanted people to be able to practice speaking and build confidence without paying for a coach every time they needed feedback. We built it’sPEAK so people could rehearse on their own and know what to work on before the next take.",
     role: "Backend, persistence, media-analysis pipeline and production deployment.",
     proof: "2nd of 15 teams · SMU .Hack Enrichment Application Programme 2026",
     media: [
@@ -210,6 +216,8 @@ const projectsBySlug = {
     slug: "echo",
     categories: ["applied-ai"],
     hook: "A memory companion for people with dementia that adapts to avoid overload.",
+    motivation:
+      "I wanted to explore how familiar photos and voices could help someone with dementia revisit a memory without the feed becoming overwhelming. That led us to build caregiver review and adapt what the feed shows over time.",
     role: "Backend, database and feed logic.",
     proof: "Best Freshmen Award · iNTUition 2026",
     media: [
@@ -268,6 +276,8 @@ const projectsBySlug = {
     slug: "asteroids",
     categories: ["signals-hardware"],
     hook: "One C++ game engine on two machines: an ESP32 handheld and a WebAssembly browser game.",
+    motivation:
+      "I built the browser version to try my hand at game development. The handheld was mostly for fun. I wanted to see the same game running on a tiny OLED with a real joystick.",
     role: WIP,
     proof: WIP,
     // A clip of the ESP32 handheld is still to come.
@@ -393,14 +403,22 @@ const projectsBySlug = {
     slug: "conway-game-of-life",
     categories: ["signals-hardware"],
     hook: "Game of Life on a 32×8 LED matrix, run by an ESP32 and streamed to a React dashboard.",
+    motivation:
+      "I was curious how rules as simple as Conway’s could make a Turing-complete system on an unbounded grid. I wanted to see what it would take to run those same rules on an ESP32 with a 32×8 LED matrix.",
     role: WIP,
     proof: WIP,
     media: [
       {
         kind: "video",
-        want: "Short clip of the 32×8 matrix running, beside the dashboard.",
-        src: WIP,
-        alt: WIP,
+        title: "Game of Life on the LED matrix",
+        want: "Short clip of the 32×8 LED matrix running Conway’s Game of Life.",
+        src: "/assets/media/conway-game-of-life.mp4",
+        poster: "/assets/media/conway-game-of-life-poster.webp",
+        width: 720,
+        height: 856,
+        alt: "Red cells light up and go dark across a 32×8 LED matrix wired to an ESP32 on a breadboard.",
+        caption:
+          "I turn the potentiometer to speed up or slow down the generations on the LED matrix. The same knob sets how densely the grid is seeded at the start of a new run.",
       },
     ],
     name: "Conway's Game of Life",
@@ -469,6 +487,8 @@ const projectsBySlug = {
     slug: "timing-attack-lab",
     categories: ["systems-security"],
     hook: "A localhost lab: how an early-exit comparison leaks a secret, and how constant-time comparison stops it.",
+    motivation:
+      "My interest in security at the hardware–software boundary got me curious about what a program can reveal through timing. The lab taught me that a check can return the right answer and still leak information if it stops at the first mismatch. That’s why I use hmac.compare_digest() to compare fixed-length secrets.",
     role: WIP,
     proof: WIP,
     media: [

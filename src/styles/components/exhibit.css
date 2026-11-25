@@ -1,6 +1,6 @@
 /* The Work window's exhibit (components/exhibit.js): a project's clips and its
    3D figure as slides in one pencil-framed panel. It sits in the open
-   project's card: straight after the one-line summary on phones and tablets,
+   project's card: after the introduction on phones and tablets,
    and as the card's right column on a laptop. */
 
 /* ---------- Where it sits ---------- */
@@ -20,7 +20,7 @@ html.is-scenes #work .project-main > * {
 html.is-scenes
   #work
   .project-main
-  > :is(.project-card-header, .project-card-desc) {
+  > :is(.project-card-header, .project-card-desc, .project-motivation) {
   order: 0;
 }
 html.is-scenes #work .project-exhibit {
@@ -40,6 +40,9 @@ html.is-scenes #work .project-main > .media {
     grid-template-columns: minmax(0, 1fr) minmax(0, 41%);
     column-gap: 40px;
     align-items: start;
+  }
+  html.is-scenes #work .full-project-card[data-project-slug="conway-game-of-life"] {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 46%);
   }
   html.is-scenes #work .project-main {
     display: block;
@@ -118,6 +121,18 @@ html.is-scenes #work .exhibit.is-empty {
 /* Small push buttons, like the site's others: a hard shadow that presses in. */
 .exhibit-arrow {
   display: grid;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+  font: 400 22px / 1 var(--font-chrome);
+}
+.exhibit-arrow > span {
+  display: grid;
   width: 34px;
   height: 30px;
   padding: 0 0 2px;
@@ -126,30 +141,32 @@ html.is-scenes #work .exhibit.is-empty {
   border-radius: 6px;
   background: var(--panel);
   box-shadow: 2px 2px 0 var(--ink);
-  color: var(--ink);
-  cursor: pointer;
-  font: 400 22px / 1 var(--font-chrome);
 }
-.exhibit-arrow:hover,
-.exhibit-arrow:focus-visible {
+.exhibit-arrow:hover > span,
+.exhibit-arrow:focus-visible > span {
   background: var(--navy);
   color: var(--panel);
 }
-.exhibit-arrow:active {
+.exhibit-arrow:active > span {
   box-shadow: none;
   translate: 2px 2px;
 }
-.exhibit-arrow[aria-disabled="true"] {
+.exhibit-arrow[aria-disabled="true"] > span {
   border-color: #34332f55;
   background: var(--panel);
   box-shadow: none;
   color: #34332f66;
   cursor: default;
 }
+.exhibit-track:focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: -2px;
+}
 
 /* ---------- Slides ---------- */
 .exhibit-track {
   display: flex;
+  align-items: flex-start;
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-x: contain;
@@ -168,8 +185,31 @@ html.is-scenes #work .exhibit.is-empty {
 .exhibit-slide[hidden] {
   display: none;
 }
+.exhibit-slide:not(.is-current) {
+  contain: size;
+}
 html.is-scenes #work .exhibit .figure-host {
   height: clamp(210px, 25vw, 280px);
+}
+html.is-scenes #work .exhibit .figure-host[data-figure="torus"] {
+  aspect-ratio: 1;
+  height: auto;
+  max-height: 650px;
+}
+@media (max-width: 999px) {
+  html.is-scenes #work .exhibit .figure-host[data-figure="torus"] {
+    max-height: 340px;
+  }
+}
+@media (max-width: 699px) {
+  html.is-scenes #work .exhibit .figure-host[data-figure="torus"] {
+    margin-inline: -8px;
+  }
+}
+html.is-scenes #work .exhibit .figure-host[data-figure="torus"][data-figure-state="fallback"] {
+  aspect-ratio: auto;
+  max-height: none;
+  margin-inline: 0;
 }
 .exhibit-slide.is-clip {
   display: flex;
@@ -212,8 +252,8 @@ html.is-scenes #work .exhibit .figure-host {
 }
 .exhibit-dots button {
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   place-items: center;
   border: 0;
@@ -244,6 +284,9 @@ html.is-scenes #work .exhibit .figure-host {
 @media (prefers-reduced-motion: reduce) {
   .exhibit-track {
     scroll-behavior: auto;
+  }
+  .exhibit[data-figure-id="torus"] .control:has([data-control="paused"]) {
+    display: none;
   }
 }
 
@@ -335,6 +378,18 @@ html.is-scenes #work .exhibit:has(.figure-frame.is-panel) .figure-readout {
 .tt-line.is-done {
   color: var(--warm);
   font-weight: 600;
+}
+@media (min-width: 1000px) {
+  .tt {
+    font-size: var(--step-1);
+    line-height: 1.45;
+  }
+  .tt:not(.is-static) {
+    height: clamp(340px, 27vw, 400px);
+  }
+  #work .exhibit:has(.tt) :is([data-stage-title], .figure-caption, .figure-readout) {
+    font-size: var(--step-0);
+  }
 }
 
 /* cya: known image sources, recorded predictions, and fixed test edits. */

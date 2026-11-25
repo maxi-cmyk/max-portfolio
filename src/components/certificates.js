@@ -65,7 +65,8 @@ function createCertificateEntry(certificate) {
 }
 
 export function initCertificates() {
-  if (!certificateList) return;
+  if (!certificateList || certificateList.dataset.enhanced) return;
+  certificateList.dataset.enhanced = "true";
 
   // Room on the board for the certificates still to come.
   const next = document.createElement("p");

@@ -73,6 +73,14 @@ function mediaItem(m) {
   }
   return `<figure class="media"><img src="${escape(m.src)}" alt="${escape(m.alt)}"${size} loading="lazy" decoding="async">${caption}</figure>`;
 }
+function figureFallback(slug) {
+  const figure = figureFor(slug);
+  if (!figure || figure.panel) return "";
+  const art = figure.id === "torus"
+    ? `<img src="/assets/media/conway-torus.webp" width="518" height="345" alt="The 32×8 grid wraps into a ring. Cells that cross a seam reappear on the opposite edge." decoding="async">`
+    : doodle(PROJECT_DOODLE[slug]);
+  return `<template data-figure-fallback><div class="figure-fallback">${art}</div></template>`;
+}
 const groups = (p) => p.categories.map(categoryLabel).map(escape).join(" · ");
 const outbound = (p) =>
   [
@@ -95,11 +103,12 @@ function cards() {
     <div class="project-main">
     <header class="project-card-header" id="work/${p.slug}"><h3 class="project-card-title" tabindex="-1">${escape(p.name)}</h3><p class="project-card-meta"><span class="project-categories">${groups(p)}</span> · ${escape(p.meta)}</p></header>
     <p class="project-card-desc">${escape(p.hook)}</p>
+    <div class="project-motivation"><h4>Why I built it</h4><p>${escape(p.motivation)}</p></div>
     ${caseStrip(p)}
     ${facts(p)}
     <div class="project-card-links"><div class="project-card-outbound-links">${outbound(p)}</div></div>
-    ${figureFor(p.slug) && !figureFor(p.slug).panel ? `<template data-figure-fallback><div class="figure-fallback">${doodle(PROJECT_DOODLE[p.slug])}</div></template>` : ""}
-    ${media(p)}
+    ${figureFallback(p.slug)}
+    ${p.media?.some((item) => !isWip(item.src)) ? `<noscript>${media(p)}</noscript>` : ""}
     <div class="project-specs">
       ${renderDatasheet(p.name, p.slug)}
       <div class="project-card-tags" aria-label="Technologies">${p.tags.map((t) => `<span class="tech-badge">${escape(t)}</span>`).join("")}</div>
@@ -183,7 +192,7 @@ function skillsBlock() {
         )
         .join("");
       const table = `<table class="skills-table"><caption class="visually-hidden">${escape(category.label)}: each skill, the projects that used it and what it did there</caption><thead><tr><th scope="col">Project</th><th scope="col">What it did there</th></tr></thead>${category.rows.map(skillGroup).join("")}</table>`;
-      return `<section class="skills-page" id="${skillsHash(category.id).slice(1)}" data-skill-page="${category.id}" aria-labelledby="${title}"><p class="skills-crumb"><a href="#skills"><span aria-hidden="true">‹</span> Skills</a></p><div class="skills-book"><nav class="skills-tabs" aria-label="Skill categories">${tabs}</nav><div class="skills-paper"><header class="skills-page-heading">${doodle(category.doodle)}<div><h2 id="${title}" tabindex="-1">${escape(category.label)}</h2><p class="skills-count">${count(category)}</p></div></header>${table}</div></div></section>`;
+      return `<section class="skills-page" id="${skillsHash(category.id).slice(1)}" data-skill-page="${category.id}"><p class="skills-crumb"><a href="#skills"><span aria-hidden="true">‹</span> Skills</a></p><div class="skills-book"><nav class="skills-tabs" aria-label="Skill categories">${tabs}</nav><div class="skills-paper"><header class="skills-page-heading">${doodle(category.doodle)}<div><h2 id="${title}" tabindex="-1">${escape(category.label)}</h2><p class="skills-count">${count(category)}</p></div></header>${table}</div></div></section>`;
     })
     .join("");
   return `<section id="skills" class="skills" aria-labelledby="skills-title"><div data-skills-landing><div class="section-heading"><div><h2 id="skills-title" tabindex="-1">Skills</h2><p>Open a category to see how each skill was used.</p></div></div><ul class="stack-cards" aria-label="Skills highlights">${cards}</ul><ul class="skills-tiles" aria-label="Skill categories">${tiles}</ul></div>${pages}</section>`;
@@ -317,7 +326,7 @@ const blocks = {
     certificates
       .map(
         (c) =>
-          `<article class="certificate-entry"><a class="certificate-preview" href="${escape(c.pdfUrl)}"><img src="${escape(c.previewUrl)}" alt="${escape(c.previewAlt)}" width="${c.previewWidth}" height="${c.previewHeight}" loading="lazy" decoding="async"></a><div class="certificate-details"><p class="certificate-date">${escape(c.issued)}</p><h3>${escape(c.title)}</h3><p class="certificate-issuer">${escape(c.issuer)}</p><p>${escape(c.summary)}</p><a class="pk-btn" href="${escape(c.pdfUrl)}">Open certificate PDF ↗</a></div></article>`,
+          `<article class="certificate-entry"><noscript><a class="certificate-preview" href="${escape(c.pdfUrl)}"><img src="${escape(c.previewUrl)}" alt="${escape(c.previewAlt)}" width="${c.previewWidth}" height="${c.previewHeight}" loading="lazy" decoding="async"></a></noscript><div class="certificate-details"><p class="certificate-date">${escape(c.issued)}</p><h3>${escape(c.title)}</h3><p class="certificate-issuer">${escape(c.issuer)}</p><p>${escape(c.summary)}</p><a class="pk-btn" href="${escape(c.pdfUrl)}">Open certificate PDF ↗</a></div></article>`,
       )
       .join("") +
     // Room on the board for the certificates still to come.

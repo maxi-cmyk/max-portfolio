@@ -39,6 +39,13 @@ export const FIGURES = {
     id: "torus",
     title: "The 32×8 grid as a torus",
     controls: [
+      {
+        type: "toggle",
+        id: "paused",
+        label: "Pause",
+        resumeLabel: "Resume",
+        value: false,
+      },
       { type: "button", id: "glider", label: "Add glider" },
       { type: "button", id: "reset", label: "Reseed" },
     ],

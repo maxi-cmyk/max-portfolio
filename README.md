@@ -39,7 +39,7 @@ Browser checks should cover overlapping filters, reset, legacy category links, p
 
 ## URLs
 
-- `#home`, `#work`, `#skills`, `#certificates` (also `#credentials`), `#contact`: scenes. `#terminal` opens the About window's console, expanded, with the prompt focused (the backtick key and the Terminal icon do the same; Esc closes it).
+- `#home`, `#work`, `#skills`, `#certificates` (also `#credentials`), `#contact`: scenes. The Terminal icon and `#terminal` open the expanded console with the prompt focused. Esc closes it.
 - `#work/echo` opens Echo in the project pager. `#project/echo` opens its single-page case study, including from old numbered or `/read` links.
 - `#project/asteroids` opens the single-page Asteroids case study. Older numbered links resolve here.
 - `#work?categories=signals-hardware,applied-ai`: the pager walks only the matching projects (add `&project=<slug>` to pick one).
@@ -59,7 +59,7 @@ The social preview image uses a root-relative URL. If a host or sharing crawler 
 
 ## Keyboard and touch
 
-`/` or Cmd/Ctrl+K opens the palette; the backtick key toggles the terminal; arrow keys or swipes move between projects and steps (every swipe has a visible button); Esc goes up one level; 1–9 jump to a project. Scene logic lives in `src/navigation/scenes.js` (pure, tested) and `src/components/scenes.js` (DOM).
+Cmd/Ctrl+K opens the palette. The project picker, pager buttons, arrows and swipes navigate Work. Focused media and input controls handle their own arrow keys. Esc goes up one level. Scene logic lives in `src/navigation/scenes.js` (pure, tested) and `src/components/scenes.js` (DOM).
 
 ## Photos, screenshots and clips
 

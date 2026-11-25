@@ -120,10 +120,14 @@ html.is-scenes .stage .figure-host {
   color: var(--ink);
   font: var(--step--1) / 1.5 var(--font-code);
 }
-.stage.no-3d .figure-frame,
-.stage.no-3d .figure-controls,
-.stage.no-3d .figure-readout {
+.stage-body:has(.figure-host[data-figure]:not([data-figure=""])[data-figure-state="fallback"])
+  :is(.figure-controls, .figure-readout) {
   display: none;
+}
+.figure-fallback img {
+  display: block;
+  width: min(100%, 518px);
+  height: auto;
 }
 .stage .figure-caption {
   margin: 0;

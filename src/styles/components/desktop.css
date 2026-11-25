@@ -145,6 +145,8 @@ html.is-scenes body {
 /* A solid label with a hard shadow, like a push button's; it inverts to navy
    on hover and focus (interaction.css). */
 .desktop-icons .icon-label {
+  max-width: 100%;
+  overflow-wrap: anywhere;
   padding: 2px 9px 3px;
   border: 1.5px solid var(--ink);
   background: var(--sheet);
@@ -158,10 +160,10 @@ html.is-scenes body {
     font-size: 17px;
   }
 }
-/* Phones: always three by two. */
+/* Keep three columns at the default scale and reflow as labels grow. */
 @media (max-width: 699px) {
   html.is-scenes .desktop-icons {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, max(calc((100% - 12px) / 3), calc(var(--step-0) * 6.25))), 1fr));
     max-width: none;
   }
 }
@@ -173,7 +175,7 @@ html.is-scenes body {
 /* Tablets: the same three-by-two block as a phone, centred. */
 @media (min-width: 700px) and (max-width: 899px) {
   html.is-scenes .desktop-icons {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, max(calc((100% - 24px) / 3), calc(var(--step-0) * 6.25))), 1fr));
     gap: 22px 12px;
     width: min(100%, 520px);
     max-width: none;

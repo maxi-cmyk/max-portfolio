@@ -5,29 +5,28 @@ export function initFigures() {
   const hosts = [...document.querySelectorAll("[data-figure]")];
   if (!hosts.length) return;
 
-  const mode = chooseRenderMode({
-    reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)")
-      .matches,
+  const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const mode = () => chooseRenderMode({
+    reducedMotion: motion.matches,
     saveData: Boolean(navigator.connection?.saveData),
     deviceMemory: navigator.deviceMemory,
     cores: navigator.hardwareConcurrency,
   });
   let stage;
   let loading;
-  let unavailable = mode === "fallback";
+  let unavailable = mode() === "fallback";
   const nearby = new Set();
   const showFallback = (host) => {
-    host.dataset.figureState = "fallback";
-    host.closest(".stage")?.classList.add("no-3d");
+    if (host.dataset.figure) host.dataset.figureState = "fallback";
   };
 
   function sync(host) {
-    if (unavailable) {
-      showFallback(host);
-      return;
-    }
     if (!host.dataset.figure) {
       stage?.swap(host);
+      return;
+    }
+    if (unavailable) {
+      showFallback(host);
       return;
     }
     if (!nearby.has(host)) return;
@@ -37,7 +36,7 @@ export function initFigures() {
     }
     loading ??= import("../figures/stage.js")
       .then((module) => {
-        stage = module.createStage({ mode });
+        stage = module.createStage({ mode: mode() });
         for (const visible of nearby) sync(visible);
       })
       .catch(() => {
@@ -49,6 +48,7 @@ export function initFigures() {
   window.addEventListener("portfolio:figure", ({ detail: { host } }) =>
     sync(host),
   );
+  motion.addEventListener("change", () => stage?.setMode(motion.matches ? "still" : "live"));
   if (unavailable) {
     hosts.forEach(showFallback);
     return;

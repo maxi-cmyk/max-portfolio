@@ -23,6 +23,7 @@ import {
 import { pickTransition } from "../navigation/transitions.js";
 import { createTransitions } from "./transitions.js";
 import { reduced } from "./reduced-motion.js";
+import { initCertificates } from "./certificates.js";
 
 const baseTitle = "Max Leong — Portfolio";
 const instant = { behavior: "instant" };
@@ -78,6 +79,7 @@ let rendered = null;
 let transitions;
 let pendingDirection = 0;
 let lastTrigger = null;
+let promotedHeadings = [];
 const memory = createWindowMemory();
 const lightsByScene = new Map();
 let zoomed = [];
@@ -114,7 +116,7 @@ function buildStages() {
   const scene = $("#work");
   if (!scene) return;
   const exhibit = createExhibit(`<div class="stage-body">
-        <div class="figure-frame"><div class="figure-host" data-figure="" data-figure-state="idle" aria-hidden="true"></div></div>
+        <div class="figure-frame"><div class="figure-host" data-figure="" data-figure-state="idle"></div></div>
         <p class="figure-caption" data-caption></p>
         <div class="figure-controls" data-controls></div>
         <p class="figure-readout" data-readout></p>
@@ -164,8 +166,7 @@ function updateFigure(stage, slug) {
         "#work-projects > :not([hidden]) [data-figure-fallback]",
       );
       host.replaceChildren(fallback?.content.cloneNode(true) ?? "");
-      if (host.dataset.figureState === "idle")
-        host.dataset.figureState = "waiting";
+      host.dataset.figureState = "waiting";
     }
     host.dataset.figure = want;
     window.dispatchEvent(
@@ -353,9 +354,27 @@ function renderSkills(category) {
   return { heading, name: heading.textContent };
 }
 
+// The static page has one site title. An open window has its own heading
+// hierarchy, including a project or Skills detail where one is selected.
+function promoteHeadings(heading, region) {
+  for (const previous of promotedHeadings) previous.removeAttribute("aria-level");
+  promotedHeadings = [];
+  if (!heading || heading.tagName === "H1") return;
+
+  const base = Number(heading.tagName[1]);
+  for (const node of region.querySelectorAll("h2, h3, h4, h5, h6")) {
+    const level = Number(node.tagName[1]);
+    if (node !== heading && level <= base) continue;
+    node.setAttribute("aria-level", String(level - base + 1));
+    promotedHeadings.push(node);
+  }
+}
+
 function render(state, { initial = false } = {}) {
   const key = `${state.scene}|${state.slug ?? state.category ?? ""}`;
   const changed = rendered !== key;
+  const returningFromCase =
+    state.scene === "work" && state.slug && rendered === `case|${state.slug}`;
   rendered = key;
 
   document.documentElement.dataset.scene = state.scene;
@@ -378,6 +397,12 @@ function render(state, { initial = false } = {}) {
   }
   if (state.scene === "case") info = renderCase(state);
   if (state.scene === "skills") info = renderSkills(state.category);
+  if (state.scene === "credentials") initCertificates();
+  const heading = info.heading ?? $(SCENE_ELEMENTS[state.scene].heading);
+  promoteHeadings(
+    heading,
+    heading?.closest(".full-project-card, [data-skill-page]") ?? el(state.scene),
+  );
   // A filter can fall back to another card, so use the project actually shown.
   renderWindowPath(
     state.scene === "work" ? { ...state, slug: workInfo.current } : state,
@@ -395,11 +420,13 @@ function render(state, { initial = false } = {}) {
 
   const usingPopup = document.activeElement?.closest?.(".popup");
   if (changed && !initial && !usingPopup) {
-    const heading = state.missing
-      ? $("#route-notice")
-      : (info.heading ?? $(SCENE_ELEMENTS[state.scene].heading));
-    heading?.focus({ preventScroll: true });
-    el(state.scene)?.scrollTo?.({ top: 0, ...instant });
+    const opener = returningFromCase && document.getElementById(`case-study-work-${state.slug}`);
+    if (opener?.getClientRects().length) {
+      opener.focus();
+    } else {
+      (state.missing ? $("#route-notice") : heading)?.focus({ preventScroll: true });
+      el(state.scene)?.scrollTo?.({ top: 0, ...instant });
+    }
   }
 }
 
@@ -554,10 +581,6 @@ function goUp() {
   if (up) go(sceneToHash(up));
 }
 
-function isTyping(target) {
-  return target.closest?.("input, textarea, select, [contenteditable='true']");
-}
-
 function wireInput() {
   document.addEventListener("click", (event) => {
     if (
@@ -607,7 +630,6 @@ function wireInput() {
 
   document.addEventListener("keydown", (event) => {
     if (event.defaultPrevented) return;
-    const typing = isTyping(event.target);
     const palettable =
       (event.key === "k" || event.key === "K") &&
       (event.metaKey || event.ctrlKey);
@@ -616,20 +638,15 @@ function wireInput() {
       palette.open();
       return;
     }
-    if (typing || event.metaKey || event.ctrlKey || event.altKey) return;
-    if (document.querySelector("dialog[open]")) return;
-    if (event.key === "/") {
-      event.preventDefault();
-      palette.open();
-    } else if (event.key === "`") {
-      event.preventDefault();
-      drawer.toggle();
-    } else if (event.key === "ArrowLeft") neighbour(-1);
+    if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+    if (document.fullscreenElement || document.querySelector("dialog[open]")) return;
+    const control = event.target.closest?.(
+      "input, textarea, select, video, audio, button, summary, [contenteditable], [role='listbox'], [role='combobox']",
+    );
+    if (control && (event.key !== "Escape" || !drawer.isOpen())) return;
+    if (event.key === "ArrowLeft") neighbour(-1);
     else if (event.key === "ArrowRight") neighbour(1);
-    else if (/^[1-9]$/.test(event.key) && machine.state.scene === "work") {
-      const slug = workInfo.slugs[Number(event.key) - 1];
-      if (slug) sideways(workHash(getWorkCategories(), slug));
-    } else if (event.key === "Escape") {
+    else if (event.key === "Escape") {
       if (drawer.isOpen()) drawer.close({ restoreFocus: true });
       else goUp();
     }
@@ -641,6 +658,7 @@ function wireInput() {
   const zone = (event) => event.target.closest?.("#work-projects");
   document.addEventListener("pointerdown", (event) => {
     if (event.pointerType === "mouse" || !zone(event)) return;
+    if (event.target.closest(".figure-host.is-turning")) return;
     const edge = 28;
     if (event.clientX < edge || event.clientX > window.innerWidth - edge)
       return;

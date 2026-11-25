@@ -6,6 +6,15 @@ const esc = (text) =>
 const display = (control, value) =>
   `${Math.round(value * (control.scale ?? 1))} ${control.unit ?? ""}`.trim();
 
+function updateToggle(button, control, on) {
+  if (control.resumeLabel) {
+    button.textContent = on ? control.resumeLabel : control.label;
+  } else {
+    button.textContent = control.label;
+    button.setAttribute("aria-pressed", String(on));
+  }
+}
+
 // Builds a figure's controls (sliders, switches, buttons, pop-ups). Every change
 // is sent to the stage as a `figure:control` event; the figure's own changes
 // (an auto-sweep, an auto-play stopping) come back as `figure:state` and
@@ -37,12 +46,14 @@ export function renderControls(container, host, figure) {
         send(control.id, value);
       });
     } else if (control.type === "toggle") {
-      wrap.innerHTML = `<button type="button" class="push" aria-pressed="${params[control.id]}" data-control="${control.id}">${esc(control.label)}</button>`;
+      wrap.innerHTML = `<button type="button" class="push" data-control="${control.id}"></button>`;
       const button = wrap.querySelector("button");
+      updateToggle(button, control, params[control.id]);
+      if (control.resumeLabel) button.disabled = true;
       button.addEventListener("click", () => {
-        const on = button.getAttribute("aria-pressed") !== "true";
-        button.setAttribute("aria-pressed", String(on));
-        send(control.id, on);
+        params[control.id] = !params[control.id];
+        updateToggle(button, control, params[control.id]);
+        send(control.id, params[control.id]);
       });
     } else if (control.type === "button") {
       wrap.innerHTML = `<button type="button" class="push" data-control="${control.id}">${esc(control.label)}</button>`;
@@ -74,13 +85,16 @@ export function renderControls(container, host, figure) {
       const value = event.detail?.[control.id];
       if (value === undefined) continue;
       const node = container.querySelector(`[data-control="${control.id}"]`);
-      if (!node || node === document.activeElement) continue;
+      if (!node) continue;
+      params[control.id] = value;
+      if (control.resumeLabel) node.disabled = false;
+      if (node === document.activeElement) continue;
       if (control.type === "range") {
         node.value = value;
         node.nextElementSibling.textContent = display(control, value);
         node.setAttribute("aria-valuetext", display(control, value));
       } else if (control.type === "toggle") {
-        node.setAttribute("aria-pressed", String(Boolean(value)));
+        updateToggle(node, control, Boolean(value));
       } else if (control.type === "select") node.value = value;
     }
   };

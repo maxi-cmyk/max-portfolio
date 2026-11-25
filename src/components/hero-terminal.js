@@ -199,7 +199,7 @@ export function initHeroTerminal() {
     if (document.documentElement.dataset.scene !== "hub") exit();
   });
 
-  // The Terminal icon, the backtick key and `#terminal` open the console
+  // The Terminal icon and `#terminal` open the console
   // expanded with the prompt focused; Esc and the red light close it.
   const api = {
     open() {

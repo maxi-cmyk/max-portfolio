@@ -19,6 +19,10 @@ test("the exhibit shows a project's clips first, then its 3D figure", () => {
     ["clip", "On the desk"],
     ["figure", "Fig. 2 · Winding machine"],
   ]);
+  assert.deepEqual(plan("conway-game-of-life", "Fig. 4 · The 32×8 grid as a torus"), [
+    ["clip", "Game of Life on the LED matrix"],
+    ["figure", "Fig. 4 · The 32×8 grid as a torus"],
+  ]);
   assert.deepEqual(plan("asteroids", null), [["clip", "Demo flight"]]);
   assert.deepEqual(plan("timing-attack-lab", "Fig. 3 · Timing attack"), [
     ["figure", "Fig. 3 · Timing attack"],

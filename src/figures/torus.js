@@ -14,7 +14,7 @@ import {
   Vector3,
 } from "three";
 import { approach } from "./ease.js";
-import { baseFigure, boundingRadius, colorsFrom, fitCamera } from "./common.js";
+import { baseFigure, colorsFrom, fitCamera } from "./common.js";
 import {
   HEIGHT,
   WIDTH,
@@ -52,12 +52,13 @@ function surface(u, v) {
 export function createTorusFigure(palette) {
   const colors = colorsFrom(palette);
   const { scene, camera, group, baseFov } = baseFigure(28, 8.6);
-  let radius = 0;
   const torus = group;
   let cells = seedBoard();
   let generation = 0;
   let accumulator = 0;
   let gliders = 0;
+  let paused = false;
+  let rotationTime = 0;
 
   // The wire of the board: a loop for every column edge and every row edge.
   const lines = [];
@@ -115,17 +116,27 @@ export function createTorusFigure(palette) {
   const tmpN = new Vector3();
   const tmpP = new Vector3();
   const tmpC = new Color();
-  const cu = (2 * Math.PI * (MAJOR + MINOR)) / WIDTH;
-  const cv = (2 * Math.PI * MINOR) / HEIGHT;
+  const cellWidth = ((2 * Math.PI * (MAJOR + MINOR)) / WIDTH) * 0.78;
+  const cellHeight = ((2 * Math.PI * MINOR) / HEIGHT) * 0.78;
+  const cellDepth = 0.12;
+  const cellOffset = 0.05;
+  // A cell's height and depth extend the tube cross-section. Its width
+  // extends perpendicular to that plane. Bound both for a full rotation.
+  const tubeRadius = Math.hypot(
+    MINOR + cellOffset + cellDepth / 2,
+    cellHeight / 2,
+  );
+  const exhibitRadius =
+    Math.hypot(MAJOR + tubeRadius, cellWidth / 2) * 1.04;
   const paint = (i) => {
     const f = frames[i];
     const k = size[i];
     matrix.makeBasis(
-      tmpU.copy(f.eu).multiplyScalar(cu * 0.78 * k),
-      tmpV.copy(f.ev).multiplyScalar(cv * 0.78 * k),
-      tmpN.copy(f.normal).multiplyScalar(0.12 * k),
+      tmpU.copy(f.eu).multiplyScalar(cellWidth * k),
+      tmpV.copy(f.ev).multiplyScalar(cellHeight * k),
+      tmpN.copy(f.normal).multiplyScalar(cellDepth * k),
     );
-    matrix.setPosition(tmpP.copy(f.position).addScaledVector(f.normal, 0.05));
+    matrix.setPosition(tmpP.copy(f.position).addScaledVector(f.normal, cellOffset));
     mesh.setMatrixAt(i, matrix);
     mesh.setColorAt(
       i,
@@ -142,7 +153,11 @@ export function createTorusFigure(palette) {
   return {
     scene,
     camera,
-    set(id) {
+    set(id, value) {
+      if (id === "paused") {
+        paused = value;
+        return;
+      }
       if (id === "reset") {
         cells = seedBoard();
         generation = 0;
@@ -153,14 +168,15 @@ export function createTorusFigure(palette) {
         addGlider(cells, (gliders * 11 + 5) % WIDTH, (gliders * 3) % HEIGHT);
       }
     },
-    params: () => ({}),
+    params: () => ({ paused }),
     readout: () => `Generation ${generation} · ${population(cells)} live cells`,
     setSize(width, height) {
-      radius ||= boundingRadius(group, 1.1);
-      fitCamera(camera, baseFov, width, height, radius);
+      fitCamera(camera, baseFov, width, height, exhibitRadius);
     },
-    update({ dt, pointer, still, time, orbit }) {
-      if (!still) {
+    update({ dt, pointer, still, orbit }) {
+      const frozen = still || paused;
+      if (!frozen) {
+        rotationTime += dt;
         accumulator += dt;
         while (accumulator >= TICK) {
           accumulator -= TICK;
@@ -178,14 +194,14 @@ export function createTorusFigure(palette) {
       }
       for (let i = 0; i < size.length; i++) {
         const target = cells[i];
-        size[i] = still ? target : approach(size[i], target, dt, 14);
-        born[i] = Math.max(0, born[i] - dt * 2);
+        size[i] = frozen ? target : approach(size[i], target, dt, 14);
+        if (!frozen) born[i] = Math.max(0, born[i] - dt * 2);
         paint(i);
       }
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
       torus.rotation.z =
-        (still ? 0.4 : time * 0.12) + pointer.x * 0.5 + orbit.yaw;
+        (still ? 0.4 : rotationTime * 0.12) + pointer.x * 0.5 + orbit.yaw;
       torus.rotation.x = 1.05 - pointer.y * 0.3 + orbit.pitch;
     },
   };

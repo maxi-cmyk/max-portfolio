@@ -7,8 +7,7 @@
 .project-insights-btn,
 .work-filters button,
 .suggestion-item,
-.palette-list li,
-.icon-label {
+.palette-list li {
   transition:
     background-color 80ms steps(2, end),
     border-color 80ms steps(2, end),

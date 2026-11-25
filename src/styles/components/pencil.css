@@ -559,11 +559,3 @@ html.is-scenes #work > .stage .figure-host {
   height: 72px;
   stroke: var(--navy);
 }
-#work .stage.no-3d:not(.is-empty) .figure-frame {
-  display: block;
-}
-#work
-  .stage:has(.figure-host[data-figure-state="fallback"])
-  :is(.figure-controls, .figure-readout) {
-  display: none;
-}
