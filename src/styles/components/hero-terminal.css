@@ -197,3 +197,9 @@ html.is-scenes #home .about.is-terminal .hero-output {
     inset: calc(var(--bar-h, 26px) + 24px) 40px 40px;
   }
 }
+@media (min-width: 1100px) {
+  html.is-scenes #home .about.is-terminal {
+    inset-inline: var(--desktop-gutter);
+    max-width: none;
+  }
+}

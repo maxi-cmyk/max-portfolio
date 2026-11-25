@@ -116,7 +116,7 @@ a.note-main {
 @media (min-width: 900px) {
   html.is-scenes #contact:not([hidden]) {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 380px;
+    grid-template-columns: minmax(0, 1fr) clamp(380px, 30vw, 420px);
     column-gap: 40px;
     align-content: start;
   }

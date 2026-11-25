@@ -24,9 +24,9 @@ html.is-scenes {
     --scene-pad: 32px;
   }
 }
-@media (min-width: 1160px) {
+@media (min-width: 900px) {
   html.is-scenes {
-    --scene-pad: calc((100vw - 1040px) / 2);
+    --scene-pad: var(--desktop-gutter);
   }
 }
 html.is-scenes body {
@@ -159,6 +159,12 @@ html.is-scenes .certificate-preview img {
     grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
     gap: 32px;
     align-items: start;
+  }
+}
+@media (min-width: 1100px) {
+  html.is-scenes .certificate-entry {
+    grid-template-columns: minmax(0, clamp(320px, 31vw, 480px)) minmax(0, 1fr);
+    column-gap: clamp(32px, 4vw, 64px);
   }
 }
 html.is-scenes #contact {

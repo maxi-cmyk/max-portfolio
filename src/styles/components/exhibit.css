@@ -50,6 +50,18 @@ html.is-scenes #work .project-main > .media {
     top: 44px;
   }
 }
+@media (min-width: 1100px) {
+  html.is-scenes #work .full-project-card:has(> .project-exhibit:empty) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  html.is-scenes #work .full-project-card:has(> .project-exhibit:empty) .project-main {
+    width: min(100%, 68rem);
+    justify-self: center;
+  }
+  html.is-scenes #work .project-main > :is(.case-strip, .project-specs) {
+    max-width: 50rem;
+  }
+}
 
 /* ---------- The panel ---------- */
 html.is-scenes #work .exhibit {

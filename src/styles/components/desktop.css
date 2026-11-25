@@ -247,6 +247,12 @@ html.is-scenes #home .lede {
 /* Laptops: the About window and the icons side by side, with the desk's
    edge running under both (workbench.css). */
 @media (min-width: 900px) {
+  html.is-scenes {
+    --desktop-gutter: max(
+      clamp(28px, calc(4vw - 14px), 88px),
+      calc((100% - 1920px) / 2)
+    );
+  }
   html.is-scenes #home:not([hidden]) {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -256,7 +262,7 @@ html.is-scenes #home .lede {
     align-content: safe center;
     align-items: center;
     width: 100%;
-    max-width: 1320px;
+    max-width: 1688px;
     margin-inline: auto;
     padding: 12px clamp(24px, 3vw, 44px);
   }
@@ -309,7 +315,7 @@ html.is-scenes .scene:not(#home) {
 }
 @media (min-width: 900px) {
   html.is-scenes .scene:not(#home) {
-    inset: 28px max(28px, calc((100% - 1040px) / 2)) 36px;
+    inset: 28px var(--desktop-gutter) 36px;
   }
 }
 /* On a laptop, the short windows are only as tall as what is in them, so the
@@ -327,7 +333,7 @@ html.is-scenes .scene:not(#home) {
   /* Contact is a short list of links and a note: a smaller window, centred,
      no taller than what is in it. */
   html.is-scenes #contact:not(.is-zoomed) {
-    inset-inline: max(28px, calc((100% - 960px) / 2));
+    inset-inline: max(var(--desktop-gutter), calc((100% - 1180px) / 2));
     min-height: 0;
   }
 }
