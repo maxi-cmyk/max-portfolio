@@ -4,9 +4,19 @@ import { gzipSync } from "node:zlib";
 import { certificates } from "../src/data/certificates.js";
 import cyaPredictions from "../src/data/cya-predictions.json" with { type: "json" };
 const html = readFileSync("dist/index.html", "utf8");
+const standaloneErrors = ["404", "403"].map((code) => {
+  const page = readFileSync(`dist/${code}.html`, "utf8");
+  if (
+    !page.includes(`data-error="${code}"`) ||
+    !page.includes(`src="/assets/error-${code}.svg"`)
+  ) {
+    throw new Error(`Missing error window or artwork in ${code}.html`);
+  }
+  return page;
+});
 const paths = new Set(
   [
-    ...html.matchAll(
+    ...[html, ...standaloneErrors].join("\n").matchAll(
       /(?:href|src|content|poster)="(?:https:\/\/nfc-portfolio-card\.vercel\.app)?(\/assets\/[^"?#]+)"/g,
     ),
   ].map((m) => m[1]),

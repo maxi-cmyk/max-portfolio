@@ -35,6 +35,9 @@ html.is-scenes .shell {
 .menubar-scene::after {
   content: "Desktop";
 }
+html[data-scene="missing"] .menubar-scene::after {
+  content: "Page not found";
+}
 html[data-scene="work"] .menubar-scene::after {
   content: "Work";
 }

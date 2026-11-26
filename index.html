@@ -136,15 +136,46 @@
     </div>
     <main id="portfolio" class="shell" aria-labelledby="site-title">
       <div id="landing-view">
-        <aside
-          id="route-notice"
-          class="route-notice"
-          tabindex="-1"
-          hidden
-        >
-          That page could not be found.
-          <a href="#work">Browse all projects →</a>
-        </aside>
+        <div id="missing-page" class="error-stage" hidden>
+          <!-- generated:not-found:start -->
+          <section
+            class="error-window"
+            data-error="404"
+            aria-labelledby="error-title"
+          >
+            <div class="error-titlebar">
+              <a
+                href="#home"
+                class="error-close"
+                aria-label="Close and go home"
+              ></a>
+              <span>max@portfolio:~/404</span>
+            </div>
+            <div class="error-layout">
+              <div class="error-copy">
+                <div>
+                  <h1 id="error-title" tabindex="-1">
+                    <span class="error-code">404</span>
+                    <span class="error-status">Page not found</span>
+                  </h1>
+                  <p>The panda checked the server. Even the logs are confused.</p>
+                </div>
+                <nav class="error-actions" aria-label="Recovery">
+                  <a class="error-primary" href="#home">Go home</a>
+                  <a href="#work">Browse work <span aria-hidden="true">↗</span></a>
+                </nav>
+              </div>
+              <img
+                class="error-art"
+                src="/assets/error-404.svg"
+                width="112"
+                height="78"
+                alt="Confused pixel panda using a laptop with a server rack behind it"
+              />
+            </div>
+          </section>
+<!-- generated:not-found:end -->
+        </div>
         <!-- alias: banana + chip -->
         <section id="home" class="intro desktop" aria-labelledby="site-title">
           <div class="about window">

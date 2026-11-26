@@ -371,21 +371,23 @@ function promoteHeadings(heading, region) {
 }
 
 function render(state, { initial = false } = {}) {
-  const key = `${state.scene}|${state.slug ?? state.category ?? ""}`;
+  const key = state.missing ? "missing" : `${state.scene}|${state.slug ?? state.category ?? ""}`;
   const changed = rendered !== key;
   const returningFromCase =
     state.scene === "work" && state.slug && rendered === `case|${state.slug}`;
   rendered = key;
 
-  document.documentElement.dataset.scene = state.scene;
+  document.documentElement.dataset.scene = state.missing ? "missing" : state.scene;
+  const missing = $("#missing-page");
+  missing.hidden = !state.missing;
+  $("#portfolio").setAttribute("aria-labelledby", state.missing ? "error-title" : "site-title");
   window.dispatchEvent(new Event("portfolio:scene"));
   if (state.scene !== "hub") memory.clear(SCENE_ELEMENTS[state.scene].icon);
   syncIcons();
   for (const [scene, { el: selector }] of Object.entries(SCENE_ELEMENTS)) {
     const node = $(selector);
-    if (node) node.hidden = scene !== state.scene;
+    if (node) node.hidden = state.missing || scene !== state.scene;
   }
-  $("#route-notice").hidden = !state.missing;
 
   let info = {};
   if (state.scene === "work") {
@@ -419,12 +421,14 @@ function render(state, { initial = false } = {}) {
     : say;
 
   const usingPopup = document.activeElement?.closest?.(".popup");
-  if (changed && !initial && !usingPopup) {
+  if (state.missing) {
+    if (changed) $("#error-title").focus({ preventScroll: true });
+  } else if (changed && !initial && !usingPopup) {
     const opener = returningFromCase && document.getElementById(`case-study-work-${state.slug}`);
     if (opener?.getClientRects().length) {
       opener.focus();
     } else {
-      (state.missing ? $("#route-notice") : heading)?.focus({ preventScroll: true });
+      heading?.focus({ preventScroll: true });
       el(state.scene)?.scrollTo?.({ top: 0, ...instant });
     }
   }
@@ -518,7 +522,7 @@ function handleRoute({ initial = false, force = false } = {}) {
     history.replaceState(history.state, "", route.hash);
   }
   const before = { ...machine.state };
-  const kind = pickTransition(before, target, {
+  const kind = before.missing || target.missing ? "none" : pickTransition(before, target, {
     initial,
     direction: pendingDirection,
     order: workInfo.slugs,
@@ -577,6 +581,10 @@ function neighbour(direction) {
 }
 
 function goUp() {
+  if (machine.state.missing) {
+    go("#home");
+    return;
+  }
   const up = parentScene(machine.state);
   if (up) go(sceneToHash(up));
 }

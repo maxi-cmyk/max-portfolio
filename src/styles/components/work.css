@@ -179,7 +179,6 @@ html:not(.is-enhanced) .case-strip {
 .is-enhanced .static-case-study {
   display: none;
 }
-.route-notice,
 .noscript-note {
   padding: 20px;
   border: 1px solid var(--line);

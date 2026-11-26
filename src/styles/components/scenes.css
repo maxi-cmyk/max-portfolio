@@ -54,13 +54,6 @@ html.is-scenes .scene {
   overscroll-behavior: contain;
   scroll-behavior: smooth;
 }
-html.is-scenes .route-notice {
-  position: absolute;
-  top: 8px;
-  right: var(--scene-pad);
-  left: var(--scene-pad);
-  z-index: 5;
-}
 html.is-scenes .field-trio,
 html.is-scenes .certificate-atmosphere,
 html.is-scenes .static-case-study {

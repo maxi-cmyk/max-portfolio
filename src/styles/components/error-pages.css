@@ -1,0 +1,245 @@
+.error-desktop {
+  margin: 0;
+  color: var(--ink);
+  background:
+    linear-gradient(#12376b24 1px, transparent 1px) 0 0 / 96px 96px,
+    linear-gradient(90deg, #12376b24 1px, transparent 1px) 0 0 / 96px 96px,
+    linear-gradient(#12376b11 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(90deg, #12376b11 1px, transparent 1px) 0 0 / 24px 24px,
+    var(--bg);
+}
+
+.error-menubar,
+.error-stage {
+  box-sizing: border-box;
+}
+
+.error-menubar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 16px;
+  min-height: 35px;
+  padding: 4px clamp(15px, 4vw, 58px);
+  border-bottom: var(--hair);
+  background: var(--panel);
+  font: 21px / 1 var(--font-chrome);
+}
+
+.error-menubar a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.error-menubar nav {
+  display: flex;
+  gap: 16px;
+}
+
+.error-menubar svg {
+  width: 17px;
+}
+.error-menubar .c-k {
+  fill: var(--ink);
+}
+.error-menubar .c-p {
+  fill: var(--panel);
+}
+.error-menubar .c-m {
+  fill: var(--warm);
+}
+
+.error-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 832px);
+  justify-content: center;
+  align-content: safe center;
+  min-height: calc(100svh - 35px);
+  padding: 28px 17px 65px;
+}
+
+#missing-page.error-stage {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.error-stage[hidden] {
+  display: none;
+}
+
+.error-window {
+  --error-accent: var(--navy);
+  --error-screen: #0d1a33;
+  --error-rim: #385e86;
+  min-width: 0;
+  border: var(--hair);
+  background: var(--panel);
+  box-shadow: 3px 3px var(--ink);
+  font: 17px / 1.45 var(--font-text);
+}
+
+.error-window[data-error="403"] {
+  --error-accent: var(--warm);
+  --error-screen: #24182c;
+  --error-rim: #905675;
+}
+
+.error-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 0 9px;
+  border-bottom: var(--hair);
+  background: repeating-linear-gradient(
+    0deg,
+    var(--ink) 0 1px,
+    var(--panel) 1px 3px
+  );
+}
+
+.error-titlebar span {
+  border: var(--hair);
+  background: var(--panel);
+  padding: 0 8px;
+  font: 12px / 1.45 var(--font-code);
+}
+
+.error-close {
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border: var(--hair);
+  background: var(--panel);
+}
+
+.error-close::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border: 1px solid #803c3b;
+  background: #d85a53;
+}
+
+.error-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 25px;
+  align-items: center;
+  padding: 25px;
+}
+
+.error-window h1 {
+  margin: 0;
+  color: var(--error-accent);
+  font-weight: 400;
+}
+
+.error-code,
+.error-status {
+  display: block;
+  font-family: var(--font-chrome);
+}
+
+.error-code {
+  margin-left: -2px;
+  font-size: clamp(67px, 8vw, 106px);
+  line-height: 0.82;
+}
+
+.error-status {
+  margin-top: 10px;
+  font-size: 31px;
+  line-height: 1.05;
+}
+
+.error-window p {
+  max-width: 29ch;
+  margin: 14px 0 0;
+  color: #4a4648;
+}
+
+.error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 19px;
+}
+
+.error-actions a {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 4px 10px;
+  border: var(--hair);
+  border-radius: var(--button-radius);
+  background: #fbfaf4;
+  color: var(--ink);
+  text-decoration: none;
+  font: 20px / 1 var(--font-chrome);
+}
+
+.error-actions .error-primary {
+  border-color: var(--error-accent);
+  background: var(--error-accent);
+  color: var(--panel);
+}
+
+.error-window a:focus-visible,
+.error-window h1:focus-visible,
+.error-menubar a:focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: 3px;
+}
+
+.error-art {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--error-rim);
+  background: var(--error-screen);
+  box-shadow: inset 0 0 0 3px
+    color-mix(in srgb, var(--error-rim), transparent 45%);
+}
+
+@media (max-width: 640px) {
+  .error-stage {
+    padding-bottom: 42px;
+  }
+  .error-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 15px;
+    padding: 16px;
+  }
+  .error-copy {
+    display: contents;
+  }
+  .error-art {
+    grid-row: 2;
+  }
+  .error-actions {
+    grid-row: 3;
+    margin: 0;
+  }
+  .error-code {
+    font-size: 61px;
+  }
+  .error-status {
+    margin-top: 7px;
+    font-size: 27px;
+  }
+  .error-window p {
+    max-width: none;
+    margin-top: 6px;
+  }
+}

@@ -300,7 +300,17 @@ const contactNoteBlock = () => {
   );
   return `<aside class="contact-note" aria-labelledby="contact-note-title"><h3 id="contact-note-title">Currently</h3><dl>${n.lines.map(line).join("")}${clock}</dl><p class="contact-note-updated">Updated <time datetime="${escape(n.updated)}">${updated}</time></p></aside>`;
 };
+// The HTTP 404 and the missing-fragment view share the same window.
+const notFoundWindow = readFileSync(
+  new URL("../404.html", import.meta.url),
+  "utf8",
+).match(/<!-- error-window:start -->\n([\s\S]*?)\n *<!-- error-window:end -->/);
+if (!notFoundWindow) throw new Error("Missing 404 window markers");
+
 const blocks = {
+  "not-found": notFoundWindow[1]
+    .replaceAll('href="/#', 'href="#')
+    .replace(/^/gm, "    "),
   contactcard: contactCard,
   contactnote: contactNoteBlock(),
   mac: `<figure class="mac-art is-paper" aria-hidden="true">${renderMac()}</figure>`,
